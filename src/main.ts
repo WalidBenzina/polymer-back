@@ -1,0 +1,44 @@
+import { ValidationPipe } from '@nestjs/common'
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { DatabaseSeeder } from './seeders/database.seeder'
+
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule)
+
+  const databaseSeeder = app.get(DatabaseSeeder)
+  await databaseSeeder.onModuleInit()
+
+  // Enable CORS with environment variables
+  app.enableCors({
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  })
+
+  app.useGlobalPipes(new ValidationPipe())
+
+  const config = new DocumentBuilder()
+    .setTitle('Polymer Auth API')
+    .setDescription('Authentication API for Polymer Africa App')
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: `JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"`,
+        in: 'header',
+      },
+      'JWT-auth'
+    )
+    .build()
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('swagger', app, document)
+
+  await app.listen(process.env.APP_PORT || 3000)
+  console.log(`Polymer Africa Backend Application is running on: ${await app.getUrl()}`)
+}
+bootstrap()
