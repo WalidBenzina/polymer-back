@@ -2,26 +2,16 @@ import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-import { DatabaseSeeder } from './seeders/database.seeder'
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule)
-
-  const databaseSeeder = app.get(DatabaseSeeder)
-  await databaseSeeder.onModuleInit()
 
   // Enable CORS with environment variables
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-    ],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   })
 
   app.useGlobalPipes(new ValidationPipe())

@@ -1,23 +1,23 @@
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
-import { Role } from 'src/role/role.entity'
-import { RoleStatus } from 'src/enums/role-status.enum'
-import { PermissionType } from 'src/common/types/permissions.type'
-import { User } from 'src/user/user.entity'
-import { Client } from 'src/client/client.entity'
-import { Product } from 'src/product/product.entity'
-import { Commande } from 'src/commande/commande.entity'
-import { UserStatus } from 'src/enums/user-status.enum'
-import { ClientStatus } from 'src/enums/client-status.enum'
-import ProductStatus from 'src/enums/product-status.enum'
-import StockStatus from 'src/enums/stock-status.enum'
-import { CommandeStatus } from 'src/enums/commande-status.enum'
-import { SeuilProduit } from 'src/produit_seuils/produit_seuil.entity'
+import { Role } from '@/role/role.entity'
+import { RoleStatus } from '@/enums/role-status.enum'
+import { PermissionType } from '@/common/types/permissions.type'
+import { User } from '@/user/user.entity'
+import { Client } from '@/client/client.entity'
+import { Product } from '@/product/product.entity'
+import { Commande } from '@/commande/commande.entity'
+import { UserStatus } from '@/enums/user-status.enum'
+import { ClientStatus } from '@/enums/client-status.enum'
+import ProductStatus from '@/enums/product-status.enum'
+import StockStatus from '@/enums/stock-status.enum'
+import { CommandeStatus } from '@/enums/commande-status.enum'
+import { SeuilProduit } from '@/produit_seuils/produit_seuil.entity'
 import * as bcrypt from 'bcrypt'
-import { Paiement } from 'src/paiement/paiement.entity'
-import { MethodPaiement } from 'src/enums/method-paiement.enum'
-import { PaiementStatus } from 'src/enums/paiement-status.enum'
+import { Paiement } from '@/paiement/paiement.entity'
+import { MethodPaiement } from '@/enums/method-paiement.enum'
+import { PaiementStatus } from '@/enums/paiement-status.enum'
 
 export const RoleUUIDs = {
   ADMIN: '',
@@ -26,7 +26,7 @@ export const RoleUUIDs = {
 }
 
 @Injectable()
-export class DatabaseSeeder implements OnModuleInit {
+export class DatabaseSeeder {
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
@@ -45,15 +45,9 @@ export class DatabaseSeeder implements OnModuleInit {
     private readonly dataSource: DataSource
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    console.log('🌱 DatabaseSeeder module initialized')
-    console.log('🌱 NODE_ENV:', process.env.NODE_ENV)
-    if (process.env.NODE_ENV === 'development') {
-      await this.seed()
-    }
-  }
-
   async seed(): Promise<void> {
+    console.log('🌱 Starting database seeding...')
+    console.log('🌱 NODE_ENV:', process.env.NODE_ENV)
     try {
       await this.clearDatabase()
       await this.createExtensions()
