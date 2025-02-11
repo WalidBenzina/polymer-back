@@ -6,13 +6,6 @@ import { Paiement } from '../paiement/paiement.entity'
 export interface CommandeResponse {
   idCommande: string
   dateCommande: Date
-  statut: CommandeStatus
-  refCommande: string
-  dateLivraisonPrevue?: string
-  dateLivraisonReelle?: string
-  totalHt: number
-  totalTaxe: number
-  totalTtc: number
   client?: {
     idClient: string
     nomClient: string
@@ -25,7 +18,16 @@ export interface CommandeResponse {
     nomUtilisateur: string
     email: string
   }
-  ligneItems: LineItem[]
-  documents: Document[]
-  paiements: Paiement[]
+  statut: CommandeStatus
+  createdAt: Date
+  updatedAt?: Date
+  dateLivraisonPrevue: string
+  dateLivraisonReelle: string
+  refCommande: string
+  ligneItems?: LineItem[]
+  paiements?: Paiement[]
+  documents?: Document[]
+  totalHt: number
+  totalTaxe: number
+  totalTtc: number
 }

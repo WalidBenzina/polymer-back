@@ -18,6 +18,7 @@ import * as bcrypt from 'bcrypt'
 import { Paiement } from '@/paiement/paiement.entity'
 import { MethodPaiement } from '@/enums/method-paiement.enum'
 import { PaiementStatus } from '@/enums/paiement-status.enum'
+import { LineItemStatus } from '@/enums/line-item-status.enum'
 
 export const RoleUUIDs = {
   ADMIN: '',
@@ -547,6 +548,10 @@ export class DatabaseSeeder {
         orderItems.push({
           produit: product,
           quantite: quantity,
+          statut: LineItemStatus.ACTIVE,
+          totalHt: itemTotal,
+          totalTax: itemTotal * 0.2,
+          totalTtc: itemTotal + itemTotal * 0.2,
           prixUnitaire: product.prix,
           total: itemTotal,
         })

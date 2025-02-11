@@ -74,15 +74,15 @@ export class CommandeService {
         // ❗ Vérification de la disponibilité du stock pour chaque produit
         for (const item of ligneItems) {
           const produit = await this.produitRepository.findOne({
-            where: { idProduit: item.productId },
+            where: { idProduit: item.produit.idProduit },
           })
 
           if (!produit) {
-            throw new NotFoundException(`Produit avec ID ${item.productId} non trouvé`)
+            throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
           }
 
           try {
-            await this.seuilService.checkStock(produit, item.quantity)
+            await this.seuilService.checkStock(produit, item.quantite)
           } catch (error) {
             throw new HttpException(
               `Stock insuffisant pour le produit ${produit.nomProduit} - ${error.message}`,
@@ -91,7 +91,7 @@ export class CommandeService {
           }
 
           try {
-            await this.seuilService.updateStock(produit, item.quantity)
+            await this.seuilService.updateStock(produit, item.quantite)
           } catch (error) {
             throw new HttpException(
               `Erreur lors de la mise à jour du stock pour le produit ${produit.nomProduit} - ${error.message}`,
@@ -183,12 +183,12 @@ export class CommandeService {
       if (statut === CommandeStatus.CANCELLED) {
         for (const item of commande.ligneItems) {
           const produit = await queryRunner.manager.findOne(Product, {
-            where: { idProduit: item.productId },
+            where: { idProduit: item.produit.idProduit },
           })
 
           if (produit) {
             // ❗Libération du stock via le service des seuils
-            this.seuilService.releaseStock(produit, item.quantity)
+            this.seuilService.releaseStock(produit, item.quantite)
 
             await queryRunner.manager.save(produit)
           }
@@ -199,11 +199,11 @@ export class CommandeService {
       if (statut === CommandeStatus.CONFIRMED) {
         for (const item of commande.ligneItems) {
           const produit = await queryRunner.manager.findOne(Product, {
-            where: { idProduit: item.productId },
+            where: { idProduit: item.produit.idProduit },
           })
 
           if (produit) {
-            produit.nombreVendu += item.quantity //❗ Augmentation du nombre vendu
+            produit.nombreVendu += item.quantite //❗ Augmentation du nombre vendu
             await queryRunner.manager.save(produit) //❗ Sauvegarde du produit avec la mise à jour du stock et du nombre vendu
           }
         }
@@ -265,6 +265,8 @@ export class CommandeService {
       ligneItems: commande.ligneItems,
       documents: commande.documents,
       paiements: commande.paiements || [],
+      createdAt: commande.createdAt,
+      updatedAt: commande.updatedAt,
     }
   }
 
