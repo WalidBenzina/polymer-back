@@ -42,11 +42,10 @@ import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.USER_DB,
-      password: process.env.PASSWORD_DB,
-      database: process.env.NAME_DB,
+      url: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      },
       entities: [
         User,
         Client,
