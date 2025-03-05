@@ -10,8 +10,7 @@ import { Role } from 'src/role/role.entity'
 import { UserStatus } from 'src/enums/user-status.enum'
 import { ClientStatus } from 'src/enums/client-status.enum'
 import { PaginationDto } from 'src/pagination/pagination.dto'
-
-import { RoleUUIDs } from 'src/seeders/database.seeder'
+import { DataSource } from 'typeorm'
 
 @Injectable()
 export class ClientService {
@@ -20,7 +19,9 @@ export class ClientService {
     private readonly clientRepository: Repository<Client>,
 
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+
+    private readonly dataSource: DataSource
   ) {}
 
   async activateClient(id: string) {
@@ -109,12 +110,20 @@ export class ClientService {
       const client = this.clientRepository.create(createClientDto)
       const savedClient = await this.clientRepository.save(client)
 
+      const clientRole = await this.dataSource
+        .getRepository(Role)
+        .findOne({ where: { nomRole: 'Client' } })
+
+      if (!clientRole) {
+        throw new Error('Client role not found')
+      }
+
       const hashedPassword = await bcrypt.hash(createClientDto.telephone, 10)
-      const user = this.userRepository.create({
+      const user: User = this.userRepository.create({
         nomUtilisateur: createClientDto.nomClient,
         email: createClientDto.email,
         motDePasse: hashedPassword,
-        role: { idRole: RoleUUIDs.CLIENT } as Role,
+        role: clientRole,
         idClient: savedClient,
         statut: UserStatus.INACTIVE,
       })

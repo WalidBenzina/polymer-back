@@ -86,7 +86,6 @@ export class CommandeController {
   async findAll(
     @Query() paginationDto: PaginationDto
   ): Promise<{ data: CommandeResponse[]; total: number; currentPage: number; totalPages: number }> {
-    console.log('paginationDto', paginationDto)
     const { data, total } = await this.commandeService.findAll(paginationDto)
 
     const currentPage = paginationDto.page

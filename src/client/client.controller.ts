@@ -56,7 +56,10 @@ export class ClientController {
     try {
       return await this.clientService.create(clientData)
     } catch (error) {
-      throw new HttpException('Erreur lors de la création du client.', HttpStatus.BAD_REQUEST)
+      throw new HttpException(
+        'Erreur lors de la création du client.' + error,
+        HttpStatus.BAD_REQUEST
+      )
     }
   }
 
@@ -94,7 +97,10 @@ export class ClientController {
       }
       return updatedClient
     } catch (error) {
-      throw new HttpException('Erreur lors de la mise à jour du client.', HttpStatus.BAD_REQUEST)
+      throw new HttpException(
+        'Erreur lors de la mise à jour du client.' + error,
+        HttpStatus.BAD_REQUEST
+      )
     }
   }
 

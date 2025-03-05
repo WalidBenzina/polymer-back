@@ -180,12 +180,13 @@ export class CommandeService {
 
   async updateCommandeStatus(id: string, statut: CommandeStatus): Promise<CommandeResponse> {
     const queryRunner = this.commandeRepository.manager.connection.createQueryRunner()
+    await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
       const commande = await queryRunner.manager.findOne(Commande, {
         where: { idCommande: id },
-        relations: ['client', 'utilisateur'],
+        relations: ['client', 'utilisateur', 'lineItems', 'lineItems.produit'],
       })
 
       if (!commande) {
@@ -201,7 +202,7 @@ export class CommandeService {
       }
 
       //❗ Libération du stock si la commande est annulée
-      if (statut === CommandeStatus.CANCELLED) {
+      if (statut === CommandeStatus.CANCELLED && commande.lineItems) {
         for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
@@ -217,7 +218,7 @@ export class CommandeService {
       }
 
       //❗ Mise à jour du stock et du nombre vendu si la commande est confirmée
-      if (statut === CommandeStatus.CONFIRMED) {
+      if (statut === CommandeStatus.CONFIRMED && commande.lineItems) {
         for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
@@ -236,7 +237,20 @@ export class CommandeService {
 
       await queryRunner.commitTransaction()
 
-      return this.toCommandeModel(commande)
+      // Fetch the complete commande with all relations for the response
+      const completeCommande = await this.commandeRepository.findOne({
+        where: { idCommande: id },
+        relations: [
+          'client',
+          'utilisateur',
+          'lineItems',
+          'lineItems.produit',
+          'paiements',
+          'documents',
+        ],
+      })
+
+      return this.toCommandeModel(completeCommande)
     } catch (error) {
       await queryRunner.rollbackTransaction()
       console.error('Erreur lors de la mise à jour du statut de la commande:', error)
