@@ -34,6 +34,8 @@ import { CreateDocumentDto } from '../document/dto/create-document.dto'
 import { DocumentResponse } from '../interfaces/document-response.interface'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { DocumentStatus } from '../enums/document.enum'
+import { CommandeOrderedDto } from './dto/ligne-items-ordered.dto'
+import { CommandeStatus } from '../enums/commande-status.enum'
 
 @ApiTags('Commande Management')
 @ApiBearerAuth('JWT-auth')
@@ -50,10 +52,26 @@ export class CommandeController {
   @ApiResponse({ status: 201, description: 'Commande créée avec succès.' })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
   @ApiOperation({ summary: 'Create a new commande.' })
-  async create(@Body() createCommandeDto: CreateCommandeDto): Promise<CommandeResponse> {
+  async create(@Body() commandeOrderedDto: CommandeOrderedDto): Promise<CommandeResponse> {
     try {
+      // Convert CommandeOrderedDto to CreateCommandeDto
+      const createCommandeDto: CreateCommandeDto = {
+        client: commandeOrderedDto.client,
+        utilisateur: commandeOrderedDto.utilisateur,
+        dateCommande: new Date().toISOString(),
+        statut: CommandeStatus.PENDING,
+        dateLivraisonPrevue: commandeOrderedDto.dateLivraisonPrevue,
+        refCommande: `CMD-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        ligneItems: commandeOrderedDto.ligneItems,
+        totalHt: commandeOrderedDto.totalHt,
+        totalTaxe: commandeOrderedDto.totalTaxe,
+        totalTtc: commandeOrderedDto.totalTtc,
+        methodePaiement: commandeOrderedDto.methodePaiement,
+      }
+
       return await this.commandeService.create(createCommandeDto)
-    } catch {
+    } catch (error) {
+      console.error('Erreur lors de la création de la commande:', error)
       throw new InternalServerErrorException('Erreur lors de la création de la commande')
     }
   }
@@ -68,6 +86,7 @@ export class CommandeController {
   async findAll(
     @Query() paginationDto: PaginationDto
   ): Promise<{ data: CommandeResponse[]; total: number; currentPage: number; totalPages: number }> {
+    console.log('paginationDto', paginationDto)
     const { data, total } = await this.commandeService.findAll(paginationDto)
 
     const currentPage = paginationDto.page

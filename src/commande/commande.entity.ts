@@ -3,7 +3,7 @@ import { Client } from '../client/client.entity'
 import { User } from 'src/user/user.entity'
 import { BaseEntity } from '../base/base.entity'
 import { CommandeStatus } from 'src/enums/commande-status.enum'
-import { LineItem } from 'src/_models/lineitem.model'
+import { LineItem } from '../lineitem/lineitem.entity'
 import { Document } from 'src/document/document.entity'
 import { Paiement } from 'src/paiement/paiement.entity'
 
@@ -37,8 +37,8 @@ export class Commande extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   refCommande: string
 
-  @Column('json', { nullable: true })
-  ligneItems: LineItem[]
+  @OneToMany(() => LineItem, (lineItem) => lineItem.commande, { cascade: true })
+  lineItems: LineItem[]
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalHt: number

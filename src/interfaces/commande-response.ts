@@ -5,7 +5,7 @@ import { Paiement } from '../paiement/paiement.entity'
 
 export interface CommandeResponse {
   idCommande: string
-  dateCommande: Date
+  dateCommande: string | Date
   client?: {
     idClient: string
     nomClient: string

@@ -11,8 +11,9 @@ import {
 } from 'class-validator'
 import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { Type } from 'class-transformer'
-import { LineItem } from 'src/_models/lineitem.model'
 import { LineItemStatus } from 'src/enums/line-item-status.enum'
+import { LigneItemOrderedDto } from './ligne-items-ordered.dto'
+import { MethodPaiement } from 'src/enums/method-paiement.enum'
 
 export class CreateCommandeDto {
   @ApiProperty({
@@ -92,9 +93,9 @@ export class CreateCommandeDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => Object)
+  @Type(() => LigneItemOrderedDto)
   @IsOptional()
-  readonly ligneItems?: LineItem[]
+  readonly ligneItems?: LigneItemOrderedDto[]
 
   @ApiProperty({
     example: 500.0,
@@ -116,4 +117,12 @@ export class CreateCommandeDto {
   })
   @IsNumber()
   readonly totalTtc: number
+
+  @ApiProperty({
+    example: MethodPaiement.VIREMENT,
+    enum: MethodPaiement,
+    description: 'La méthode de paiement',
+  })
+  @IsEnum(MethodPaiement)
+  readonly methodePaiement: MethodPaiement
 }

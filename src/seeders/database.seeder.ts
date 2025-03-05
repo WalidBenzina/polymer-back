@@ -49,19 +49,40 @@ export class DatabaseSeeder {
   async seed(): Promise<void> {
     console.log('🌱 Starting database seeding...')
     console.log('🌱 NODE_ENV:', process.env.NODE_ENV)
+
     try {
       await this.clearDatabase()
+      console.log('✅ Database cleared')
+
       await this.createExtensions()
+      console.log('✅ Extensions created')
+
       await this.seedRoles()
+      console.log('✅ Roles seeded')
+
       const products = await this.seedProducts()
+      console.log('✅ Products seeded')
+
       await this.seedProductThresholds(products)
+      console.log('✅ Product thresholds seeded')
+
       const clients = await this.seedClients()
+      console.log('✅ Clients seeded')
+
       await this.seedUsers(clients)
-      await this.seedOrders(clients)
-      console.log('✅ Database seeded successfully')
+      console.log('✅ Users seeded')
+
+      try {
+        await this.seedOrders(clients)
+        console.log('✅ Orders seeded')
+      } catch (orderError) {
+        console.error('⚠️ Error seeding orders, but continuing with other operations:', orderError)
+      }
+
+      console.log('✅ Database seeding completed successfully')
     } catch (error) {
       console.error('❌ Error seeding database:', error)
-      throw error
+      throw new Error(`Failed to seed database: ${error.message}`)
     }
   }
 
@@ -529,6 +550,21 @@ export class DatabaseSeeder {
     const products = await this.productRepository.find()
     const users = await this.userRepository.find({ relations: ['idClient'] })
 
+    // Helper function to wait between operations
+    const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+    // Retry function with exponential backoff
+    const retry = async <T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
+      try {
+        return await fn()
+      } catch (error) {
+        if (retries <= 0) throw error
+        console.log(`Retrying operation after ${delay}ms...`)
+        await sleep(delay)
+        return retry(fn, retries - 1, delay * 2)
+      }
+    }
+
     const createOrder = async (
       client: Client,
       user: User,
@@ -536,104 +572,148 @@ export class DatabaseSeeder {
       date: Date,
       index: number
     ): Promise<Commande> => {
-      const numItems = Math.floor(Math.random() * 3) + 1
-      const orderItems = []
-      let totalHt = 0
+      try {
+        const numItems = Math.floor(Math.random() * 3) + 1
+        const orderItems = []
+        let totalHt = 0
 
-      for (let i = 0; i < numItems; i++) {
-        const product = products[Math.floor(Math.random() * products.length)]
-        const quantity = Math.floor(Math.random() * 100) + 1
-        const itemTotal = product.prix * quantity
+        for (let i = 0; i < numItems; i++) {
+          const product = products[Math.floor(Math.random() * products.length)]
+          const quantity = Math.floor(Math.random() * 100) + 1
+          const itemTotal = product.prix * quantity
 
-        orderItems.push({
-          produit: product,
-          quantite: quantity,
-          statut: LineItemStatus.ACTIVE,
-          totalHt: itemTotal,
-          totalTax: itemTotal * 0.2,
-          totalTtc: itemTotal + itemTotal * 0.2,
-          prixUnitaire: product.prix,
-          total: itemTotal,
-        })
+          orderItems.push({
+            produit: product,
+            quantite: quantity,
+            statut: LineItemStatus.ACTIVE,
+            totalHt: itemTotal,
+            totalTax: itemTotal * 0.2,
+            totalTtc: itemTotal + itemTotal * 0.2,
+            prixUnitaire: product.prix,
+            total: itemTotal,
+          })
 
-        totalHt += itemTotal
-      }
+          totalHt += itemTotal
+        }
 
-      const totalTaxe = totalHt * 0.2
-      const totalTtc = totalHt + totalTaxe
+        const totalTaxe = totalHt * 0.2
+        const totalTtc = totalHt + totalTaxe
 
-      // Generate a unique reference using client ID, timestamp, and index
-      const timestamp = date.getTime()
-      const refCommande = `CMD-${client.idClient.slice(0, 4)}-${timestamp}-${index}`
+        // Generate a unique reference using client ID, timestamp, and index
+        const timestamp = date.getTime()
+        const refCommande = `CMD-${client.idClient.slice(0, 4)}-${timestamp}-${index}`
 
-      const order = await this.commandeRepository.save(
-        this.commandeRepository.create({
-          dateCommande: date.toISOString(),
+        // Calculate delivery date
+        const deliveryDate = new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const formattedDeliveryDate = deliveryDate.toISOString().split('T')[0]
+
+        // Generate payment method before creating the order
+        const paymentMethod = Math.random() < 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE
+
+        // Create order without payment first
+        const orderEntity = this.commandeRepository.create({
+          dateCommande: date.toISOString().split('T')[0],
           client: client,
           utilisateur: user,
           statut: status,
           refCommande,
-          ligneItems: orderItems,
+          lineItems: orderItems,
           totalHt,
           totalTaxe,
           totalTtc,
-          dateLivraisonPrevue: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          dateLivraisonPrevue: formattedDeliveryDate,
         })
-      )
 
-      // Créer le paiement associé
-      const paymentMethod = Math.random() < 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE
-      let paymentStatus = PaiementStatus.PENDING
+        // Save the order
+        const savedOrder = await this.commandeRepository.save(orderEntity)
 
-      // Définir le statut du paiement en fonction du statut de la commande
-      switch (status) {
-        case CommandeStatus.DELIVERED:
-          paymentStatus = PaiementStatus.COMPLETED
-          break
-        case CommandeStatus.CANCELLED:
-          paymentStatus = Math.random() < 0.5 ? PaiementStatus.FAILED : PaiementStatus.REFUNDED
-          break
-        case CommandeStatus.SHIPPED:
-        case CommandeStatus.CONFIRMED:
-          paymentStatus = Math.random() < 0.7 ? PaiementStatus.COMPLETED : PaiementStatus.PENDING
-          break
-        default:
-          paymentStatus = PaiementStatus.PENDING
+        // Determine payment status based on order status
+        let paymentStatus = PaiementStatus.PENDING
+
+        // Définir le statut du paiement en fonction du statut de la commande
+        switch (status) {
+          case CommandeStatus.DELIVERED:
+            paymentStatus = PaiementStatus.COMPLETED
+            break
+          case CommandeStatus.CANCELLED:
+            paymentStatus = Math.random() < 0.5 ? PaiementStatus.FAILED : PaiementStatus.REFUNDED
+            break
+          case CommandeStatus.SHIPPED:
+          case CommandeStatus.CONFIRMED:
+            paymentStatus = Math.random() < 0.7 ? PaiementStatus.COMPLETED : PaiementStatus.PENDING
+            break
+          default:
+            paymentStatus = PaiementStatus.PENDING
+        }
+
+        // Create payment with reference to the saved order
+        const paymentEntity = this.paiementRepository.create({
+          montant: totalTtc,
+          methodePaiement: paymentMethod,
+          statut: paymentStatus,
+          idCommande: savedOrder,
+          idUtilisateur: user,
+        })
+
+        // Save the payment
+        const savedPayment = await this.paiementRepository.save(paymentEntity)
+
+        // Update the order with the payment reference
+        if (!savedOrder.paiements) {
+          savedOrder.paiements = []
+        }
+        savedOrder.paiements.push(savedPayment)
+        await this.commandeRepository.save(savedOrder)
+
+        return savedOrder
+      } catch (error) {
+        console.error(`Error creating order: ${error.message}`)
+        throw error
       }
-
-      const payment = this.paiementRepository.create({
-        montant: totalTtc,
-        methodePaiement: paymentMethod,
-        statut: paymentStatus,
-        idCommande: order,
-        idUtilisateur: user,
-      })
-
-      await this.paiementRepository.save(payment)
-
-      return order
     }
 
-    // Create orders for each client
-    for (const client of clients) {
-      const clientUser = users.find((u) => u.idClient?.idClient === client.idClient)
-      if (clientUser) {
-        const numOrders = Math.floor(Math.random() * 6) + 5 // 5-10 orders per client
-        const statuses = [
-          CommandeStatus.DELIVERED,
-          CommandeStatus.SHIPPED,
-          CommandeStatus.CONFIRMED,
-          CommandeStatus.PENDING,
-          CommandeStatus.CANCELLED,
-        ]
+    // Process clients in smaller batches
+    const batchSize = 2 // Process 2 clients at a time
+    for (let i = 0; i < clients.length; i += batchSize) {
+      const clientBatch = clients.slice(i, i + batchSize)
 
-        for (let i = 0; i < numOrders; i++) {
-          const date = new Date()
-          date.setDate(date.getDate() - i * 3) // Orders spaced 3 days apart
-          const status = statuses[i % statuses.length]
-          await createOrder(client, clientUser, status, date, i)
+      // Process each client in the batch
+      for (const client of clientBatch) {
+        const clientUser = users.find((u) => u.idClient?.idClient === client.idClient)
+        if (clientUser) {
+          // Reduce number of orders per client to avoid overloading the DB
+          const numOrders = Math.floor(Math.random() * 3) + 2 // 2-4 orders per client
+          const statuses = [
+            CommandeStatus.DELIVERED,
+            CommandeStatus.SHIPPED,
+            CommandeStatus.CONFIRMED,
+            CommandeStatus.PENDING,
+            CommandeStatus.CANCELLED,
+          ]
+
+          for (let i = 0; i < numOrders; i++) {
+            const date = new Date()
+            date.setDate(date.getDate() - i * 3) // Orders spaced 3 days apart
+            const status = statuses[i % statuses.length]
+
+            // Use retry logic for each order creation
+            try {
+              await retry(() => createOrder(client, clientUser, status, date, i))
+              // Add a small delay between order creations
+              await sleep(100)
+            } catch (error) {
+              console.error(
+                `Failed to create order for client ${client.idClient} after retries:`,
+                error
+              )
+              // Continue with next order instead of failing the entire seeding process
+            }
+          }
         }
       }
+
+      // Add a delay between batches to avoid overwhelming the database
+      await sleep(500)
     }
   }
 

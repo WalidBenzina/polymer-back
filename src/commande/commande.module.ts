@@ -14,10 +14,12 @@ import { MulterModule } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
 import { S3Module } from '../s3/s3.module'
 import { Paiement } from 'src/paiement/paiement.entity'
+import { LineItem } from 'src/lineitem/lineitem.entity'
+import { LineItemService } from 'src/lineitem/lineitem.service'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Commande, Client, User, Product, Paiement]),
+    TypeOrmModule.forFeature([Commande, Client, User, Product, Paiement, LineItem]),
     AuthModule,
     ProduitSeuilsModule,
     DocumentModule,
@@ -27,7 +29,7 @@ import { Paiement } from 'src/paiement/paiement.entity'
     S3Module,
   ],
   controllers: [CommandeController],
-  providers: [CommandeService, DocumentsService],
+  providers: [CommandeService, DocumentsService, LineItemService],
   exports: [CommandeService],
 })
 export class CommandeModule {}

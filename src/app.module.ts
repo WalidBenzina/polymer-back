@@ -31,6 +31,8 @@ import { MarineTrafficModule } from './marine-traffic/marine-traffic.module'
 import { ProduitSeuilsModule } from './produit_seuils/produit_seuils.module'
 import { S3Module } from './s3/s3.module'
 import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
+import { LineItemModule } from './lineitem/lineitem.module'
+import { LineItem } from './lineitem/lineitem.entity'
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
       type: 'postgres',
       url: process.env.DATABASE_URL,
       ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
       },
       entities: [
         User,
@@ -57,6 +59,7 @@ import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
         Paiement,
         OffreDePrix,
         SeuilProduit,
+        LineItem,
       ],
       synchronize: true,
     }),
@@ -74,6 +77,7 @@ import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
     MarineTrafficModule,
     ProduitSeuilsModule,
     S3Module,
+    LineItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],

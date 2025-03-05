@@ -17,6 +17,10 @@ import { CommandeResponse } from '../interfaces/commande-response'
 import { Paiement } from 'src/paiement/paiement.entity'
 import { PaiementStatus } from 'src/enums/paiement-status.enum'
 import { MethodPaiement } from 'src/enums/method-paiement.enum'
+import { LineItem } from '../lineitem/lineitem.entity'
+import { LineItemService } from '../lineitem/lineitem.service'
+import { LineItem as LineItemModel } from 'src/_models/lineitem.model'
+import { LineItemStatus } from '../enums/line-item-status.enum'
 
 @Injectable()
 export class CommandeService {
@@ -32,7 +36,10 @@ export class CommandeService {
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
     private readonly seuilService: SeuilProduitService,
-    private readonly documentService: DocumentsService
+    private readonly documentService: DocumentsService,
+    @InjectRepository(LineItem)
+    private readonly lineItemRepository: Repository<LineItem>,
+    private readonly lineItemService: LineItemService
   ) {}
 
   async create(createCommandeDto: CreateCommandeDto): Promise<CommandeResponse> {
@@ -48,9 +55,11 @@ export class CommandeService {
       totalHt = 0,
       totalTaxe = 0,
       totalTtc = 0,
+      methodePaiement,
     } = createCommandeDto
 
     const queryRunner = this.commandeRepository.manager.connection.createQueryRunner()
+    await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
@@ -69,60 +78,28 @@ export class CommandeService {
         throw new NotFoundException(`Utilisateur avec ID ${utilisateur} non trouvé`)
       }
 
-      //❗ Vérification de la disponibilité du stock pour chaque produit
-      try {
-        // ❗ Vérification de la disponibilité du stock pour chaque produit
-        for (const item of ligneItems) {
-          const produit = await this.produitRepository.findOne({
-            where: { idProduit: item.produit.idProduit },
-          })
+      // Stock verification
+      for (const item of ligneItems) {
+        const produit = await this.produitRepository.findOne({
+          where: { idProduit: item.produit.idProduit },
+        })
 
-          if (!produit) {
-            throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
-          }
-
-          try {
-            await this.seuilService.checkStock(produit, item.quantite)
-          } catch (error) {
-            throw new HttpException(
-              `Stock insuffisant pour le produit ${produit.nomProduit} - ${error.message}`,
-              HttpStatus.BAD_REQUEST
-            )
-          }
-
-          try {
-            await this.seuilService.updateStock(produit, item.quantite)
-          } catch (error) {
-            throw new HttpException(
-              `Erreur lors de la mise à jour du stock pour le produit ${produit.nomProduit} - ${error.message}`,
-              HttpStatus.INTERNAL_SERVER_ERROR
-            )
-          }
-
-          try {
-            await queryRunner.manager.save(produit)
-          } catch (error) {
-            throw new HttpException(
-              `Erreur lors de la sauvegarde du produit ${produit.nomProduit} - ${error.message}`,
-              HttpStatus.INTERNAL_SERVER_ERROR
-            )
-          }
+        if (!produit) {
+          throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
         }
-      } catch (error) {
-        throw new HttpException(
-          error.message || 'Une erreur est survenue lors du traitement des stocks',
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
+
+        await this.seuilService.checkStock(produit, item.quantite)
+        await this.seuilService.updateStock(produit, item.quantite)
+        await queryRunner.manager.save(produit)
       }
 
-      //❗ Création de la commande
+      // Create commande without line items first
       const commandeEntity = this.commandeRepository.create({
-        dateCommande,
+        dateCommande: new Date(dateCommande),
         statut: statut as CommandeStatus,
         client: clientEntity,
         utilisateur: utilisateurEntity,
         refCommande,
-        ligneItems,
         dateLivraisonPrevue,
         dateLivraisonReelle,
         totalHt,
@@ -130,22 +107,66 @@ export class CommandeService {
         totalTtc,
       })
 
-      const commande = await queryRunner.manager.save(commandeEntity)
+      const savedCommande = await queryRunner.manager.save(commandeEntity)
 
-      // Création du paiement initial
+      // Create line items directly with queryRunner
+      for (const item of ligneItems) {
+        const produit = await this.produitRepository.findOne({
+          where: { idProduit: item.produit.idProduit },
+        })
+
+        if (!produit) {
+          throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
+        }
+
+        // Create the line item directly with queryRunner instead of using the service
+        const lineItem = this.lineItemRepository.create({
+          produit,
+          commande: savedCommande,
+          quantite: item.quantite,
+          totalHt: item.totalHt,
+          totalTax: item.totalTax,
+          totalTtc: item.totalTtc,
+          statut: item.statut ? LineItemStatus[item.statut.toUpperCase()] : LineItemStatus.ACTIVE,
+        })
+
+        await queryRunner.manager.save(lineItem)
+      }
+
+      // Create payment
       const paiementEntity = this.paiementRepository.create({
         montant: totalTtc,
-        methodePaiement: MethodPaiement.VIREMENT,
+        methodePaiement: methodePaiement || MethodPaiement.VIREMENT,
         statut: PaiementStatus.PENDING,
-        idCommande: commande,
+        idCommande: savedCommande,
         idUtilisateur: utilisateurEntity,
       })
 
-      await queryRunner.manager.save(paiementEntity)
+      const savedPaiement = await queryRunner.manager.save(paiementEntity)
+
+      // Ensure the payment is associated with the order
+      if (!savedCommande.paiements) {
+        savedCommande.paiements = []
+      }
+      savedCommande.paiements.push(savedPaiement)
+      await queryRunner.manager.save(savedCommande)
 
       await queryRunner.commitTransaction()
 
-      return this.toCommandeModel(commande)
+      // Fetch the complete commande with relations for the response
+      const completeCommande = await this.commandeRepository.findOne({
+        where: { idCommande: savedCommande.idCommande },
+        relations: [
+          'client',
+          'utilisateur',
+          'lineItems',
+          'lineItems.produit',
+          'paiements',
+          'documents',
+        ],
+      })
+
+      return this.toCommandeModel(completeCommande)
     } catch (error) {
       await queryRunner.rollbackTransaction()
       console.error('Erreur lors de la création de la commande:', error)
@@ -181,7 +202,7 @@ export class CommandeService {
 
       //❗ Libération du stock si la commande est annulée
       if (statut === CommandeStatus.CANCELLED) {
-        for (const item of commande.ligneItems) {
+        for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
           })
@@ -197,7 +218,7 @@ export class CommandeService {
 
       //❗ Mise à jour du stock et du nombre vendu si la commande est confirmée
       if (statut === CommandeStatus.CONFIRMED) {
-        for (const item of commande.ligneItems) {
+        for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
           })
@@ -238,16 +259,24 @@ export class CommandeService {
   }
 
   private toCommandeModel(commande: Commande): CommandeResponse {
-    return {
+    // Convert lineItems to ligneItems for the response model format
+    const ligneItems =
+      commande.lineItems?.map((item) => ({
+        idLineItem: item.idLineItem,
+        produit: item.produit,
+        quantite: item.quantite,
+        totalHt: item.totalHt,
+        totalTax: item.totalTax,
+        totalTtc: item.totalTtc,
+        statut: item.statut,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })) || []
+
+    // Create the response object with the correct types
+    const response: CommandeResponse = {
       idCommande: commande.idCommande,
       dateCommande: commande.dateCommande,
-      statut: commande.statut,
-      refCommande: commande.refCommande,
-      dateLivraisonPrevue: commande.dateLivraisonPrevue,
-      dateLivraisonReelle: commande.dateLivraisonReelle,
-      totalHt: commande.totalHt,
-      totalTaxe: commande.totalTaxe,
-      totalTtc: commande.totalTtc,
       client: commande.client
         ? {
             idClient: commande.client.idClient,
@@ -262,19 +291,38 @@ export class CommandeService {
         nomUtilisateur: commande.utilisateur.nomUtilisateur,
         email: commande.utilisateur.email,
       },
-      ligneItems: commande.ligneItems,
-      documents: commande.documents,
-      paiements: commande.paiements || [],
+      statut: commande.statut,
       createdAt: commande.createdAt,
       updatedAt: commande.updatedAt,
+      dateLivraisonPrevue: commande.dateLivraisonPrevue,
+      dateLivraisonReelle: commande.dateLivraisonReelle,
+      refCommande: commande.refCommande,
+      // Use type assertion to match the expected response format
+      ligneItems: ligneItems as unknown as LineItemModel[],
+      // Include payments if available
+      paiements: commande.paiements || [],
+      // Include documents if available
+      documents: commande.documents || [],
+      totalHt: commande.totalHt,
+      totalTaxe: commande.totalTaxe,
+      totalTtc: commande.totalTtc,
     }
+
+    return response
   }
 
   async findAll(paginationDto: PaginationDto): Promise<{ data; total: number }> {
     const { page, limit } = paginationDto
 
     const [result, total] = await this.commandeRepository.findAndCount({
-      relations: ['client', 'utilisateur.role', 'paiements'],
+      relations: [
+        'client',
+        'utilisateur.role',
+        'paiements',
+        'lineItems',
+        'lineItems.produit',
+        'documents',
+      ],
       skip: (page - 1) * limit,
       take: limit,
     })
@@ -288,7 +336,14 @@ export class CommandeService {
   async findOne(id: string): Promise<CommandeResponse> {
     const commande = await this.commandeRepository.findOneOrFail({
       where: { idCommande: id },
-      relations: ['client', 'utilisateur.role', 'documents', 'paiements'],
+      relations: [
+        'client',
+        'utilisateur.role',
+        'documents',
+        'paiements',
+        'lineItems',
+        'lineItems.produit',
+      ],
     })
     return this.toCommandeModel(commande)
   }
@@ -297,11 +352,20 @@ export class CommandeService {
     try {
       const existingCommande = await this.commandeRepository.findOne({
         where: { idCommande: id },
-        relations: ['client', 'utilisateur.role'],
+        relations: ['client', 'utilisateur', 'lineItems', 'paiements'],
       })
 
       if (!existingCommande) {
         throw new NotFoundException(`Commande avec ID ${id} non trouvée`)
+      }
+
+      // Update simple fields
+      if (updateCommandeDto.dateCommande) {
+        existingCommande.dateCommande = new Date(updateCommandeDto.dateCommande)
+      }
+
+      if (updateCommandeDto.statut) {
+        existingCommande.statut = updateCommandeDto.statut
       }
 
       if (updateCommandeDto.dateLivraisonPrevue) {
@@ -312,23 +376,19 @@ export class CommandeService {
         existingCommande.dateLivraisonReelle = updateCommandeDto.dateLivraisonReelle
       }
 
-      if (updateCommandeDto.dateCommande) {
-        existingCommande.dateCommande = new Date(updateCommandeDto.dateCommande)
-      }
-
       if (updateCommandeDto.refCommande) {
         existingCommande.refCommande = updateCommandeDto.refCommande
       }
 
-      if (updateCommandeDto.totalHt) {
+      if (updateCommandeDto.totalHt !== undefined) {
         existingCommande.totalHt = updateCommandeDto.totalHt
       }
 
-      if (updateCommandeDto.totalTaxe) {
+      if (updateCommandeDto.totalTaxe !== undefined) {
         existingCommande.totalTaxe = updateCommandeDto.totalTaxe
       }
 
-      if (updateCommandeDto.totalTtc) {
+      if (updateCommandeDto.totalTtc !== undefined) {
         existingCommande.totalTtc = updateCommandeDto.totalTtc
       }
 
@@ -354,13 +414,33 @@ export class CommandeService {
         existingCommande.utilisateur = utilisateurEntity
       }
 
+      // Handle line items update
       if (updateCommandeDto.ligneItems) {
-        existingCommande.ligneItems = updateCommandeDto.ligneItems
+        // Delete existing line items
+        const existingLineItems = await this.lineItemRepository.find({
+          where: { commande: { idCommande: id } },
+        })
+
+        if (existingLineItems.length > 0) {
+          await this.lineItemRepository.remove(existingLineItems)
+        }
+
+        // Create new line items using the service
+        for (const item of updateCommandeDto.ligneItems) {
+          await this.lineItemService.createLineItem(item, id)
+        }
       }
 
-      const updatedCommande = await this.commandeRepository.save(existingCommande)
+      // Save the commande without line items (they're saved separately)
+      await this.commandeRepository.save(existingCommande)
 
-      return this.toCommandeModel(updatedCommande)
+      // Fetch the updated commande with all relations
+      const completeCommande = await this.commandeRepository.findOne({
+        where: { idCommande: id },
+        relations: ['client', 'utilisateur', 'lineItems', 'lineItems.produit', 'paiements'],
+      })
+
+      return this.toCommandeModel(completeCommande)
     } catch (error) {
       throw new HttpException(
         'Erreur lors de la mise à jour de la commande. ' + error.message,
@@ -373,10 +453,16 @@ export class CommandeService {
     try {
       const commande = await this.commandeRepository.findOne({
         where: { idCommande: id },
+        relations: ['paiements'],
       })
 
       if (!commande) {
         throw new HttpException('Commande non trouvée.', HttpStatus.NOT_FOUND)
+      }
+
+      // Delete associated payments if they exist
+      if (commande.paiements && commande.paiements.length > 0) {
+        await this.paiementRepository.remove(commande.paiements)
       }
 
       const result = await this.commandeRepository.delete(id)

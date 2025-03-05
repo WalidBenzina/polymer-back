@@ -1,7 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import {
   IsDateString,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,11 +8,9 @@ import {
   ValidateNested,
   IsUUID,
 } from 'class-validator'
-import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { Type } from 'class-transformer'
-import { LineItem } from 'src/_models/lineitem.model'
 import { CreateCommandeDto } from './create-commande.dto'
-import { LineItemStatus } from 'src/enums/line-item-status.enum'
+import { LigneItemOrderedDto } from './ligne-items-ordered.dto'
 
 export class UpdateCommandeDto extends PartialType(CreateCommandeDto) {
   @ApiProperty({
@@ -71,41 +68,28 @@ export class UpdateCommandeDto extends PartialType(CreateCommandeDto) {
   readonly refCommande?: string
 
   @ApiProperty({
-    type: [Object],
+    type: [LigneItemOrderedDto],
     description: 'Les articles de la commande',
     required: false,
     example: [
       {
-        id_line_item: 1,
-        product_id: 101,
-        product_name: 'Produit A',
-        quantity: 2,
-        total_ht: 200.0,
-        total_tax: 40.0,
-        total_ttc: 240.0,
-        status: LineItemStatus.ACTIVE,
-        created_at: '2024-10-28T00:00:00Z',
-        updated_at: '2024-10-28T00:00:00Z',
-      },
-      {
-        id_line_item: 2,
-        product_id: 102,
-        product_name: 'Produit B',
-        quantity: 1,
-        total_ht: 150.0,
-        total_tax: 30.0,
-        total_ttc: 180.0,
-        status: LineItemStatus.ACTIVE,
-        created_at: '2024-10-28T00:00:00Z',
-        updated_at: '2024-10-28T00:00:00Z',
+        produit: {
+          idProduit: 'uuid-produit',
+          nomProduit: 'Produit A',
+        },
+        quantite: 2,
+        totalHt: 200.0,
+        totalTax: 40.0,
+        totalTtc: 240.0,
+        statut: 'active',
       },
     ],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => Object)
+  @Type(() => LigneItemOrderedDto)
   @IsOptional()
-  readonly ligneItems?: LineItem[]
+  readonly ligneItems?: LigneItemOrderedDto[]
 
   @ApiProperty({
     example: 500.0,
