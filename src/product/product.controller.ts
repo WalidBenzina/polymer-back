@@ -120,6 +120,7 @@ export class ProductController {
       const message = await this.productService.remove(id)
       return { message }
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,

@@ -164,6 +164,25 @@ export class ProductService {
         throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
       }
 
+      // First, check if the product is used in any line items
+      const lineItemsCount = await this.checkProductUsageInLineItems(id)
+      if (lineItemsCount > 0) {
+        throw new HttpException(
+          `Impossible de supprimer ce produit car il est utilisé dans ${lineItemsCount} commande(s). Veuillez d'abord supprimer ou modifier ces commandes.`,
+          HttpStatus.BAD_REQUEST
+        )
+      }
+
+      // Then, delete any associated seuil_produit records
+      try {
+        await this.seuilService.deleteSeuil(id)
+      } catch (error) {
+        // If no seuil exists for this product, continue with deletion
+        if (!(error instanceof HttpException && error.getStatus() === HttpStatus.NOT_FOUND)) {
+          throw error
+        }
+      }
+
       const result = await this.productRepository.delete(id)
 
       if (result.affected === 0) {
@@ -179,10 +198,26 @@ export class ProductService {
         throw error
       }
       throw new HttpException(
-        'Erreur inattendue lors de la suppression du produit.',
+        'Erreur inattendue lors de la suppression du produit.' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
+  }
+
+  /**
+   * Check if a product is used in any line items
+   * @param productId The ID of the product to check
+   * @returns The number of line items using this product
+   */
+  private async checkProductUsageInLineItems(productId: string): Promise<number> {
+    const query = `
+      SELECT COUNT(*) as count 
+      FROM line_items 
+      WHERE produit_id = $1
+    `
+
+    const result = await this.productRepository.query(query, [productId])
+    return parseInt(result[0].count, 10)
   }
 
   private toProductModel(product: Product): ProductModel {
