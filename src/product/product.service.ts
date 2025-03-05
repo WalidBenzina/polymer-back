@@ -4,7 +4,7 @@ import { Repository } from 'typeorm'
 import { Product } from './product.entity'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
-import { PaginationDto } from 'src/pagination/pagination.dto'
+import { FilterProductDto } from './dto/filter-product.dto'
 import { ProductModel } from 'src/_models/product.model'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { SeuilProduitService } from 'src/produit_seuils/produit_seuils.service'
@@ -53,31 +53,80 @@ export class ProductService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<{
+  async findAll(filterDto: FilterProductDto): Promise<{
     data: ProductModel[]
     total: number
-    currentPage: number
+    page: number
+    limit: number
     totalPages: number
   }> {
     try {
-      const { page, limit } = paginationDto
+      const { page, limit, search, prixMin, prixMax, statut, statutStock, sort } = filterDto
 
-      const [result, total] = await this.productRepository.findAndCount({
-        skip: (page - 1) * limit,
-        take: limit,
-      })
+      // Create query builder
+      const queryBuilder = this.productRepository.createQueryBuilder('product')
 
+      // Apply search filter
+      if (search) {
+        queryBuilder.andWhere(
+          '(LOWER(product.nomProduit) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search))',
+          { search: `%${search}%` }
+        )
+      }
+
+      // Apply price filters
+      if (prixMin !== undefined) {
+        queryBuilder.andWhere('product.prix >= :prixMin', { prixMin })
+      }
+
+      if (prixMax !== undefined) {
+        queryBuilder.andWhere('product.prix <= :prixMax', { prixMax })
+      }
+
+      // Apply status filter
+      if (statut) {
+        queryBuilder.andWhere('product.statut = :statut', { statut })
+      }
+
+      // Apply stock status filter
+      if (statutStock) {
+        queryBuilder.andWhere('product.statutStock = :statutStock', { statutStock })
+      }
+
+      // Apply sorting
+      if (sort) {
+        const [field, direction] = sort.split(',')
+        const validSortFields = ['createdAt', 'prix', 'nombreVendu', 'evaluation']
+
+        if (validSortFields.includes(field)) {
+          queryBuilder.orderBy(`product.${field}`, direction.toUpperCase() as 'ASC' | 'DESC')
+        } else {
+          // Default sorting if invalid field
+          queryBuilder.orderBy('product.createdAt', 'DESC')
+        }
+      } else {
+        // Default sorting
+        queryBuilder.orderBy('product.createdAt', 'DESC')
+      }
+
+      // Apply pagination
+      queryBuilder.skip((page - 1) * limit)
+      queryBuilder.take(limit)
+
+      // Execute query
+      const [result, total] = await queryBuilder.getManyAndCount()
       const totalPages = Math.ceil(total / limit)
 
       return {
         data: result.map((product) => this.toProductModel(product)),
-        total: total,
-        currentPage: page,
-        totalPages: totalPages,
+        total,
+        page,
+        limit,
+        totalPages,
       }
     } catch (error) {
       throw new HttpException(
-        'Erreur lors de la récupération des produits.',
+        'Erreur lors de la récupération des produits: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
@@ -88,7 +137,7 @@ export class ProductService {
       const product = await this.productRepository.findOneOrFail({ where: { idProduit: id } })
       return this.toProductModel(product)
     } catch (error) {
-      throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
+      throw new HttpException('Produit non trouvé.' + error.message, HttpStatus.NOT_FOUND)
     }
   }
 
@@ -100,7 +149,10 @@ export class ProductService {
       })
       return this.toProductModel(updatedProduct)
     } catch (error) {
-      throw new HttpException('Erreur lors de la mise à jour du produit.', HttpStatus.BAD_REQUEST)
+      throw new HttpException(
+        'Erreur lors de la mise à jour du produit.' + error.message,
+        HttpStatus.BAD_REQUEST
+      )
     }
   }
 

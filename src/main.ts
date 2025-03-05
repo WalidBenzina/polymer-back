@@ -14,7 +14,13 @@ async function bootstrap(): Promise<void> {
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   })
 
-  app.useGlobalPipes(new ValidationPipe())
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      whitelist: true,
+    })
+  )
 
   const config = new DocumentBuilder()
     .setTitle('Polymer Auth API')

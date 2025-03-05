@@ -16,7 +16,7 @@ import { ProductModel } from 'src/_models/product.model'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
-import { PaginationDto } from 'src/pagination/pagination.dto'
+import { FilterProductDto } from './dto/filter-product.dto'
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard'
 import { JwtAuthGuard } from 'src/auth/local-auth.guard'
 import { Permissions } from 'src/auth/decorators/permissions.decorator'
@@ -49,25 +49,18 @@ export class ProductController {
 
   @Get()
   @Permissions(PermissionType.READ_PRODUCT)
-  @ApiOperation({ summary: 'Récupérer la liste paginée des produits' })
+  @ApiOperation({ summary: 'Récupérer la liste filtrée et paginée des produits' })
   @ApiResponse({ status: 200, description: 'Produits récupérés avec succès.' })
   @ApiResponse({ status: 400, description: 'Erreur lors de la récupération des produits.' })
-  async findAll(@Query() paginationDto: PaginationDto): Promise<{
+  async findAll(@Query() filterProductDto: FilterProductDto): Promise<{
     data: ProductModel[]
     total: number
-    currentPage: number
+    page: number
+    limit: number
     totalPages: number
   }> {
     try {
-      const { data, total, currentPage, totalPages } =
-        await this.productService.findAll(paginationDto)
-
-      return {
-        data,
-        total,
-        currentPage,
-        totalPages,
-      }
+      return await this.productService.findAll(filterProductDto)
     } catch (error) {
       throw new HttpException(
         {
