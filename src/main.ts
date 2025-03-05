@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { DatabaseSeeder } from './seeders/database.seeder'
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule)
@@ -40,6 +41,18 @@ async function bootstrap(): Promise<void> {
     .build()
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('swagger', app, document)
+
+  // Run database seeder in production environment
+  if (process.env.NODE_ENV === 'production' && process.env.AUTO_SEED === 'true') {
+    try {
+      const databaseSeeder = app.get(DatabaseSeeder)
+      console.log('🌱 Starting automatic database seeding in production...')
+      await databaseSeeder.seed()
+      console.log('✅ Production database seeding completed successfully')
+    } catch (error) {
+      console.error('❌ Error during production database seeding:', error)
+    }
+  }
 
   await app.listen(process.env.APP_PORT || 3000)
   console.log(`Polymer Africa Backend Application is running on: ${await app.getUrl()}`)
