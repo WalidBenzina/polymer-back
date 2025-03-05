@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsEnum, IsNumber, IsOptional, IsString, IsBoolean } from 'class-validator'
 import { Type } from 'class-transformer'
 import ProductStatus from 'src/enums/product-status.enum'
 import StockStatus from 'src/enums/stock-status.enum'
@@ -59,4 +59,14 @@ export class FilterProductDto {
   @IsOptional()
   @IsString()
   sort?: string
+
+  @ApiProperty({
+    description: 'Include archived products in results',
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  includeArchived?: boolean = false
 }

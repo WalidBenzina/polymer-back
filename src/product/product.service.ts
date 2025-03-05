@@ -61,10 +61,25 @@ export class ProductService {
     totalPages: number
   }> {
     try {
-      const { page, limit, search, prixMin, prixMax, statut, statutStock, sort } = filterDto
+      const {
+        page,
+        limit,
+        search,
+        prixMin,
+        prixMax,
+        statut,
+        statutStock,
+        sort,
+        includeArchived = false,
+      } = filterDto
 
       // Create query builder
       const queryBuilder = this.productRepository.createQueryBuilder('product')
+
+      // N'incluez pas les produits archivés par défaut
+      if (!includeArchived) {
+        queryBuilder.andWhere('product.isArchived = :isArchived', { isArchived: false })
+      }
 
       // Apply search filter
       if (search) {
@@ -164,41 +179,47 @@ export class ProductService {
         throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
       }
 
-      // First, check if the product is used in any line items
-      const lineItemsCount = await this.checkProductUsageInLineItems(id)
-      if (lineItemsCount > 0) {
-        throw new HttpException(
-          `Impossible de supprimer ce produit car il est utilisé dans ${lineItemsCount} commande(s). Veuillez d'abord supprimer ou modifier ces commandes.`,
-          HttpStatus.BAD_REQUEST
-        )
-      }
+      // Au lieu de vérifier et bloquer la suppression, marquez simplement le produit comme archivé
+      await this.productRepository.update(id, { isArchived: true })
 
-      // Then, delete any associated seuil_produit records
-      try {
-        await this.seuilService.deleteSeuil(id)
-      } catch (error) {
-        // If no seuil exists for this product, continue with deletion
-        if (!(error instanceof HttpException && error.getStatus() === HttpStatus.NOT_FOUND)) {
-          throw error
-        }
-      }
-
-      const result = await this.productRepository.delete(id)
-
-      if (result.affected === 0) {
-        throw new HttpException(
-          'Échec de la suppression du produit.',
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      }
-
-      return `Produit avec l'ID ${id} supprimé avec succès.`
+      return `Produit avec l'ID ${id} archivé avec succès.`
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
       }
       throw new HttpException(
-        'Erreur inattendue lors de la suppression du produit.' + error.message,
+        "Erreur inattendue lors de l'archivage du produit." + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      )
+    }
+  }
+
+  /**
+   * Restaure un produit archivé
+   * @param id L'ID du produit à restaurer
+   * @returns Un message de confirmation
+   */
+  async restore(id: string): Promise<string> {
+    try {
+      const product = await this.productRepository.findOne({ where: { idProduit: id } })
+
+      if (!product) {
+        throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
+      }
+
+      if (!product.isArchived) {
+        return `Le produit avec l'ID ${id} n'est pas archivé.`
+      }
+
+      await this.productRepository.update(id, { isArchived: false })
+
+      return `Produit avec l'ID ${id} restauré avec succès.`
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(
+        'Erreur inattendue lors de la restauration du produit.' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
@@ -243,6 +264,7 @@ export class ProductService {
       hauteur: product.hauteur,
       largeur: product.largeur,
       longueur: product.longueur,
+      isArchived: product.isArchived,
     }
   }
 }

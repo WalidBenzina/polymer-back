@@ -21,6 +21,7 @@ export interface ProductModel {
   hauteur?: number
   largeur?: number
   longueur?: number
+  isArchived: boolean
   createdAt: Date
   updatedAt?: Date
 }

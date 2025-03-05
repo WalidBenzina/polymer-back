@@ -112,9 +112,9 @@ export class ProductController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer un produit spécifique par ID' })
-  @ApiResponse({ status: 204, description: 'Produit supprimé avec succès.' })
-  @ApiResponse({ status: 404, description: 'Produit non trouvé pour la suppression.' })
+  @ApiOperation({ summary: 'Archiver un produit spécifique par ID' })
+  @ApiResponse({ status: 204, description: 'Produit archivé avec succès.' })
+  @ApiResponse({ status: 404, description: "Produit non trouvé pour l'archivage." })
   async deleteProduct(@Param('id') id: string): Promise<{ message: string }> {
     try {
       const message = await this.productService.remove(id)
@@ -124,7 +124,26 @@ export class ProductController {
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
-          error: error.message || 'Erreur lors de la suppression du produit.',
+          error: error.message || "Erreur lors de l'archivage du produit.",
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      )
+    }
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restaurer un produit archivé par ID' })
+  @ApiResponse({ status: 200, description: 'Produit restauré avec succès.' })
+  @ApiResponse({ status: 404, description: 'Produit non trouvé pour la restauration.' })
+  async restoreProduct(@Param('id') id: string): Promise<{ message: string }> {
+    try {
+      const message = await this.productService.restore(id)
+      return { message }
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message || 'Erreur lors de la restauration du produit.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR
       )

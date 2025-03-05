@@ -34,6 +34,9 @@ export class Product extends BaseEntity {
   })
   statutStock: StockStatus
 
+  @Column({ default: false })
+  isArchived: boolean
+
   @Column({ type: 'varchar', length: 255, unique: true })
   sku: string
 
