@@ -16,19 +16,15 @@ import { Product } from './product/product.entity'
 import { Commande } from './commande/commande.entity'
 import { Document } from './document/document.entity'
 import { Paiement } from './paiement/paiement.entity'
-import { SeuilProduit } from './produit_seuils/produit_seuil.entity'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { ConfigurationModule } from './configuration/configuration.module'
 import { DocumentModule } from './document/document.module'
 import { MulterModule } from '@nestjs/platform-express'
 import { OffreDePrixModule } from './offre-de-prix/offre-de-prix.module'
 import { PaiementModule } from './paiement/paiement.module'
-import { Configuration } from './configuration/configuration.entity'
 import { DatabaseModule } from './seeders/database.module'
 import { MarineTrafficModule } from './marine-traffic/marine-traffic.module'
-import { ProduitSeuilsModule } from './produit_seuils/produit_seuils.module'
 import { S3Module } from './s3/s3.module'
 import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
 import { LineItemModule } from './lineitem/lineitem.module'
@@ -48,19 +44,7 @@ import { LineItem } from './lineitem/lineitem.entity'
       ssl: {
         rejectUnauthorized: false,
       },
-      entities: [
-        User,
-        Client,
-        Role,
-        Product,
-        Commande,
-        Configuration,
-        Document,
-        Paiement,
-        OffreDePrix,
-        SeuilProduit,
-        LineItem,
-      ],
+      entities: [User, Client, Role, Product, Commande, Document, Paiement, OffreDePrix, LineItem],
       synchronize: true,
     }),
     AuthModule,
@@ -69,13 +53,11 @@ import { LineItem } from './lineitem/lineitem.entity'
     ProductModule,
     CommandeModule,
     UserModule,
-    ConfigurationModule,
     DocumentModule,
     OffreDePrixModule,
     PaiementModule,
     DatabaseModule,
     MarineTrafficModule,
-    ProduitSeuilsModule,
     S3Module,
     LineItemModule,
   ],

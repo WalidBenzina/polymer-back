@@ -13,7 +13,6 @@ import { ClientStatus } from '@/enums/client-status.enum'
 import ProductStatus from '@/enums/product-status.enum'
 import StockStatus from '@/enums/stock-status.enum'
 import { CommandeStatus } from '@/enums/commande-status.enum'
-import { SeuilProduit } from '@/produit_seuils/produit_seuil.entity'
 import * as bcrypt from 'bcrypt'
 import { Paiement } from '@/paiement/paiement.entity'
 import { MethodPaiement } from '@/enums/method-paiement.enum'
@@ -39,8 +38,6 @@ export class DatabaseSeeder {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Commande)
     private readonly commandeRepository: Repository<Commande>,
-    @InjectRepository(SeuilProduit)
-    private readonly seuilProduitRepository: Repository<SeuilProduit>,
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
     private readonly dataSource: DataSource
@@ -60,11 +57,8 @@ export class DatabaseSeeder {
       await this.seedRoles()
       console.log('✅ Roles seeded')
 
-      const products = await this.seedProducts()
+      await this.seedProducts()
       console.log('✅ Products seeded')
-
-      await this.seedProductThresholds(products)
-      console.log('✅ Product thresholds seeded')
 
       const clients = await this.seedClients()
       console.log('✅ Clients seeded')
@@ -714,28 +708,6 @@ export class DatabaseSeeder {
 
       // Add a delay between batches to avoid overwhelming the database
       await sleep(500)
-    }
-  }
-
-  private async seedProductThresholds(products: Product[]): Promise<void> {
-    for (const product of products) {
-      const existingSeuil = await this.seuilProduitRepository.findOne({
-        where: { produit: { idProduit: product.idProduit } },
-      })
-
-      if (!existingSeuil) {
-        // Calculate thresholds based on available quantity
-        const seuilMinimal = Math.floor(product.quantiteDisponible * 0.1) // 10% of available quantity
-        const seuilReapprovisionnement = Math.floor(product.quantiteDisponible * 0.3) // 30% of available quantity
-
-        const seuil = this.seuilProduitRepository.create({
-          seuilMinimal,
-          seuilReapprovisionnement,
-          produit: product,
-        })
-
-        await this.seuilProduitRepository.save(seuil)
-      }
     }
   }
 

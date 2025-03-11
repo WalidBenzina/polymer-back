@@ -7,14 +7,12 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { FilterProductDto } from './dto/filter-product.dto'
 import { ProductModel } from 'src/_models/product.model'
 import { HttpException, HttpStatus } from '@nestjs/common'
-import { SeuilProduitService } from 'src/produit_seuils/produit_seuils.service'
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-    private readonly seuilService: SeuilProduitService
+    private productRepository: Repository<Product>
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<ProductModel> {
@@ -29,20 +27,6 @@ export class ProductService {
 
       const productEntity = this.productRepository.create(createProductDto)
       const product = await this.productRepository.save(productEntity)
-
-      // ❗Création des seuils pour le produit par défaut (1,3) :
-      const createSeuilDto = {
-        seuilMinimal: 1,
-        seuilReapprovisionnement: 3,
-      }
-      try {
-        await this.seuilService.createSeuils(product.idProduit, createSeuilDto)
-      } catch (error) {
-        throw new HttpException(
-          error.message || 'Erreur lors de la création des seuils du produit.',
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      }
 
       return this.toProductModel(product)
     } catch (error) {

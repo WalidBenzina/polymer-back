@@ -7,7 +7,6 @@ import { Client } from 'src/client/client.entity'
 import { User } from 'src/user/user.entity'
 import { AuthModule } from 'src/auth/auth.module'
 import { Product } from 'src/product/product.entity'
-import { ProduitSeuilsModule } from 'src/produit_seuils/produit_seuils.module'
 import { DocumentsService } from 'src/document/document.service'
 import { DocumentModule } from '../document/document.module'
 import { MulterModule } from '@nestjs/platform-express'
@@ -21,7 +20,6 @@ import { LineItemService } from 'src/lineitem/lineitem.service'
   imports: [
     TypeOrmModule.forFeature([Commande, Client, User, Product, Paiement, LineItem]),
     AuthModule,
-    ProduitSeuilsModule,
     DocumentModule,
     MulterModule.register({
       storage: memoryStorage(),

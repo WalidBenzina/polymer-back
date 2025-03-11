@@ -9,7 +9,6 @@ import { Product } from '@/product/product.entity'
 import { Commande } from '@/commande/commande.entity'
 import { Document } from '@/document/document.entity'
 import { Paiement } from '@/paiement/paiement.entity'
-import { SeuilProduit } from '@/produit_seuils/produit_seuil.entity'
 import { ProductModule } from '@/product/product.module'
 import { UserModule } from '@/user/user.module'
 import { ClientModule } from '@/client/client.module'
@@ -17,20 +16,10 @@ import { RoleModule } from '@/role/role.module'
 import { CommandeModule } from '@/commande/commande.module'
 import { DocumentModule } from '@/document/document.module'
 import { PaiementModule } from '@/paiement/paiement.module'
-import { ProduitSeuilsModule } from '@/produit_seuils/produit_seuils.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Role,
-      User,
-      Client,
-      Product,
-      Commande,
-      Document,
-      Paiement,
-      SeuilProduit,
-    ]),
+    TypeOrmModule.forFeature([Role, User, Client, Product, Commande, Document, Paiement]),
     ProductModule,
     UserModule,
     ClientModule,
@@ -38,7 +27,6 @@ import { ProduitSeuilsModule } from '@/produit_seuils/produit_seuils.module'
     CommandeModule,
     DocumentModule,
     PaiementModule,
-    ProduitSeuilsModule,
   ],
   providers: [DatabaseSeeder, SeedCommand],
   exports: [DatabaseSeeder],

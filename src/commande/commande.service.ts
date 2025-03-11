@@ -10,7 +10,6 @@ import { User } from 'src/user/user.entity'
 import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { Product } from 'src/product/product.entity'
-import { SeuilProduitService } from 'src/produit_seuils/produit_seuils.service'
 
 import { DocumentsService } from '../document/document.service'
 import { CommandeResponse } from '../interfaces/commande-response'
@@ -35,7 +34,6 @@ export class CommandeService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
-    private readonly seuilService: SeuilProduitService,
     private readonly documentService: DocumentsService,
     @InjectRepository(LineItem)
     private readonly lineItemRepository: Repository<LineItem>,
@@ -88,8 +86,6 @@ export class CommandeService {
           throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
         }
 
-        await this.seuilService.checkStock(produit, item.quantite)
-        await this.seuilService.updateStock(produit, item.quantite)
         await queryRunner.manager.save(produit)
       }
 
@@ -209,9 +205,6 @@ export class CommandeService {
           })
 
           if (produit) {
-            // ❗Libération du stock via le service des seuils
-            this.seuilService.releaseStock(produit, item.quantite)
-
             await queryRunner.manager.save(produit)
           }
         }
