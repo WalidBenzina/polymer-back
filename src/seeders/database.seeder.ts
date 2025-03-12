@@ -7,6 +7,7 @@ import { PermissionType } from '@/common/types/permissions.type'
 import { User } from '@/user/user.entity'
 import { Client } from '@/client/client.entity'
 import { Product } from '@/product/product.entity'
+import { ProductFamily } from '@/product-family/product-family.entity'
 import { Commande } from '@/commande/commande.entity'
 import { UserStatus } from '@/enums/user-status.enum'
 import { ClientStatus } from '@/enums/client-status.enum'
@@ -36,6 +37,8 @@ export class DatabaseSeeder {
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductFamily)
+    private readonly productFamilyRepository: Repository<ProductFamily>,
     @InjectRepository(Commande)
     private readonly commandeRepository: Repository<Commande>,
     @InjectRepository(Paiement)
@@ -56,6 +59,9 @@ export class DatabaseSeeder {
 
       await this.seedRoles()
       console.log('✅ Roles seeded')
+
+      await this.seedProductFamilies()
+      console.log('✅ Product families seeded')
 
       await this.seedProducts()
       console.log('✅ Products seeded')
@@ -168,7 +174,72 @@ export class DatabaseSeeder {
     }
   }
 
+  private async seedProductFamilies(): Promise<void> {
+    const productFamilies = [
+      {
+        nomFamille: 'RPET',
+        description: 'Recycled PET flakes, clear color, suitable for food packaging',
+      },
+      {
+        nomFamille: 'HDPE',
+        description: 'High-density polyethylene regrind from post-consumer waste',
+      },
+      {
+        nomFamille: 'PP',
+        description: 'Recycled polypropylene pellets for injection molding.webp',
+      },
+      {
+        nomFamille: 'LDPE',
+        description: 'Low-density polyethylene resin from recycled materials',
+      },
+      {
+        nomFamille: 'PVC',
+        description: 'Polyvinyl chloride recyclé pour applications industrielles',
+      },
+      {
+        nomFamille: 'ABS',
+        description: 'Acrylonitrile butadiène styrène recyclé pour moulage',
+      },
+      {
+        nomFamille: 'PS',
+        description: 'Polystyrène recyclé pour emballages',
+      },
+      {
+        nomFamille: 'PC',
+        description: 'Polycarbonate recyclé haute qualité',
+      },
+      {
+        nomFamille: 'PA',
+        description: 'Polyamide recyclé pour applications techniques',
+      },
+      {
+        nomFamille: 'PET',
+        description: 'Polyéthylène téréphtalate recyclé pour bouteilles',
+      },
+    ]
+
+    for (const familyData of productFamilies) {
+      const existingFamily = await this.productFamilyRepository.findOneBy({
+        nomFamille: familyData.nomFamille,
+      })
+
+      if (!existingFamily) {
+        const newFamily = this.productFamilyRepository.create(familyData)
+        await this.productFamilyRepository.save(newFamily)
+      }
+    }
+  }
+
   private async seedProducts(): Promise<Product[]> {
+    // First, get all product families
+    const productFamilies = await this.productFamilyRepository.find()
+    const familyMap = new Map<string, ProductFamily>()
+
+    // Create a map of family names to family objects for easy lookup
+    productFamilies.forEach((family) => {
+      familyMap.set(family.nomFamille, family)
+    })
+
     const products = [
       {
         nomProduit: 'RPET Flakes Clear',
@@ -191,6 +262,7 @@ export class DatabaseSeeder {
         longueur: 40.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'RPET',
       },
       {
         nomProduit: 'HDPE Regrind',
@@ -213,6 +285,7 @@ export class DatabaseSeeder {
         longueur: 45.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'HDPE',
       },
       {
         nomProduit: 'PP Pellets Recycled',
@@ -235,6 +308,7 @@ export class DatabaseSeeder {
         longueur: 42.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PP',
       },
       {
         nomProduit: 'LDPE Resin Recycled',
@@ -257,6 +331,7 @@ export class DatabaseSeeder {
         longueur: 41.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'LDPE',
       },
       {
         nomProduit: 'PVC Recyclé',
@@ -279,6 +354,7 @@ export class DatabaseSeeder {
         longueur: 43.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PVC',
       },
       {
         nomProduit: 'ABS Recyclé',
@@ -301,6 +377,7 @@ export class DatabaseSeeder {
         longueur: 44.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'ABS',
       },
       {
         nomProduit: 'PS Recyclé',
@@ -323,6 +400,7 @@ export class DatabaseSeeder {
         longueur: 42.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PS',
       },
       {
         nomProduit: 'PC Recyclé',
@@ -345,6 +423,7 @@ export class DatabaseSeeder {
         longueur: 46.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PC',
       },
       {
         nomProduit: 'PA Recyclé',
@@ -367,6 +446,7 @@ export class DatabaseSeeder {
         longueur: 45.0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PA',
       },
       {
         nomProduit: 'PET Recyclé',
@@ -389,6 +469,7 @@ export class DatabaseSeeder {
         longueur: 43.5,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        familyName: 'PET',
       },
     ]
 
@@ -396,8 +477,27 @@ export class DatabaseSeeder {
     for (const productData of products) {
       const existingProduct = await this.productRepository.findOneBy({ sku: productData.sku })
       if (!existingProduct) {
+        // Get the family for this product
+        const family = familyMap.get(productData.familyName)
+
+        if (!family) {
+          console.warn(
+            `Family ${productData.familyName} not found for product ${productData.nomProduit}, skipping...`
+          )
+          continue
+        }
+
+        // Create a new product object without the familyName property
+        const productToSave = {
+          ...Object.fromEntries(
+            Object.entries(productData).filter(([key]) => key !== 'familyName')
+          ),
+          idFamille: family.idFamille,
+          famille: family,
+        }
+
         const savedProduct = await this.productRepository.save(
-          this.productRepository.create(productData)
+          this.productRepository.create(productToSave)
         )
         savedProducts.push(savedProduct)
       } else {

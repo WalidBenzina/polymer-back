@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import {
+  Repository,
+  Like,
+  MoreThanOrEqual,
+  Between,
+  LessThanOrEqual,
+  FindOptionsWhere,
+} from 'typeorm'
 import { Product } from './product.entity'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
@@ -54,70 +61,57 @@ export class ProductService {
         statut,
         statutStock,
         sort,
-        includeArchived = false,
+        includeArchived,
+        idFamille,
       } = filterDto
+      const skip = (page - 1) * limit
 
-      // Create query builder
-      const queryBuilder = this.productRepository.createQueryBuilder('product')
+      const where: FindOptionsWhere<Product> = {}
 
-      // N'incluez pas les produits archivés par défaut
       if (!includeArchived) {
-        queryBuilder.andWhere('product.isArchived = :isArchived', { isArchived: false })
+        where.isArchived = false
       }
 
-      // Apply search filter
       if (search) {
-        queryBuilder.andWhere(
-          '(LOWER(product.nomProduit) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search))',
-          { search: `%${search}%` }
-        )
+        where.nomProduit = Like(`%${search}%`)
       }
 
-      // Apply price filters
       if (prixMin !== undefined) {
-        queryBuilder.andWhere('product.prix >= :prixMin', { prixMin })
+        where.prix = MoreThanOrEqual(prixMin)
       }
 
       if (prixMax !== undefined) {
-        queryBuilder.andWhere('product.prix <= :prixMax', { prixMax })
-      }
-
-      // Apply status filter
-      if (statut) {
-        queryBuilder.andWhere('product.statut = :statut', { statut })
-      }
-
-      // Apply stock status filter
-      if (statutStock) {
-        queryBuilder.andWhere('product.statutStock = :statutStock', { statutStock })
-      }
-
-      // Apply sorting
-      if (sort) {
-        const [field, direction] = sort.split(',')
-        const validSortFields = ['createdAt', 'prix', 'nombreVendu', 'evaluation']
-
-        if (validSortFields.includes(field)) {
-          queryBuilder.orderBy(`product.${field}`, direction.toUpperCase() as 'ASC' | 'DESC')
+        if (where.prix) {
+          where.prix = Between(prixMin, prixMax)
         } else {
-          // Default sorting if invalid field
-          queryBuilder.orderBy('product.createdAt', 'DESC')
+          where.prix = LessThanOrEqual(prixMax)
         }
-      } else {
-        // Default sorting
-        queryBuilder.orderBy('product.createdAt', 'DESC')
       }
 
-      // Apply pagination
-      queryBuilder.skip((page - 1) * limit)
-      queryBuilder.take(limit)
+      if (statut) {
+        where.statut = statut
+      }
 
-      // Execute query
-      const [result, total] = await queryBuilder.getManyAndCount()
+      if (statutStock) {
+        where.statutStock = statutStock
+      }
+
+      if (idFamille) {
+        where.idFamille = idFamille
+      }
+
+      const [products, total] = await this.productRepository.findAndCount({
+        where,
+        skip,
+        take: limit,
+        order: this.buildSortOrder(sort),
+        relations: ['famille'],
+      })
+
       const totalPages = Math.ceil(total / limit)
 
       return {
-        data: result.map((product) => this.toProductModel(product)),
+        data: products.map((product) => this.toProductModel(product)),
         total,
         page,
         limit,
@@ -125,7 +119,7 @@ export class ProductService {
       }
     } catch (error) {
       throw new HttpException(
-        'Erreur lors de la récupération des produits: ' + error.message,
+        'Erreur lors de la récupération des produits : ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
@@ -133,23 +127,42 @@ export class ProductService {
 
   async findOne(id: string): Promise<ProductModel> {
     try {
-      const product = await this.productRepository.findOneOrFail({ where: { idProduit: id } })
+      const product = await this.productRepository.findOne({
+        where: { idProduit: id },
+        relations: ['famille'],
+      })
+
+      if (!product) {
+        throw new HttpException('Produit non trouvé', HttpStatus.NOT_FOUND)
+      }
+
       return this.toProductModel(product)
     } catch (error) {
-      throw new HttpException('Produit non trouvé.' + error.message, HttpStatus.NOT_FOUND)
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        'Erreur lors de la récupération du produit : ' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      )
     }
   }
 
   async update(id: string, updateProductDto: UpdateProductDto): Promise<ProductModel> {
     try {
       await this.productRepository.update(id, updateProductDto)
-      const updatedProduct = await this.productRepository.findOneOrFail({
+      const updatedProduct = await this.productRepository.findOne({
         where: { idProduit: id },
+        relations: ['famille'],
       })
+
+      if (!updatedProduct) {
+        throw new HttpException('Produit non trouvé', HttpStatus.NOT_FOUND)
+      }
+
       return this.toProductModel(updatedProduct)
     } catch (error) {
+      if (error instanceof HttpException) throw error
       throw new HttpException(
-        'Erreur lors de la mise à jour du produit.' + error.message,
+        'Erreur lors de la mise à jour du produit : ' + error.message,
         HttpStatus.BAD_REQUEST
       )
     }
@@ -157,7 +170,10 @@ export class ProductService {
 
   async remove(id: string): Promise<string> {
     try {
-      const product = await this.productRepository.findOne({ where: { idProduit: id } })
+      const product = await this.productRepository.findOne({
+        where: { idProduit: id },
+        relations: ['famille'],
+      })
 
       if (!product) {
         throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
@@ -172,7 +188,7 @@ export class ProductService {
         throw error
       }
       throw new HttpException(
-        "Erreur inattendue lors de l'archivage du produit." + error.message,
+        "Erreur inattendue lors de l'archivage du produit : " + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
@@ -185,7 +201,10 @@ export class ProductService {
    */
   async restore(id: string): Promise<string> {
     try {
-      const product = await this.productRepository.findOne({ where: { idProduit: id } })
+      const product = await this.productRepository.findOne({
+        where: { idProduit: id },
+        relations: ['famille'],
+      })
 
       if (!product) {
         throw new HttpException('Produit non trouvé.', HttpStatus.NOT_FOUND)
@@ -203,7 +222,7 @@ export class ProductService {
         throw error
       }
       throw new HttpException(
-        'Erreur inattendue lors de la restauration du produit.' + error.message,
+        'Erreur inattendue lors de la restauration du produit : ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
@@ -225,6 +244,21 @@ export class ProductService {
     return parseInt(result[0].count, 10)
   }
 
+  private buildSortOrder(sort?: string): Record<string, 'ASC' | 'DESC'> {
+    if (!sort) {
+      return { createdAt: 'DESC' }
+    }
+
+    const [field, direction] = sort.split(',')
+    const validSortFields = ['createdAt', 'prix', 'nombreVendu', 'evaluation', 'nomProduit']
+
+    if (validSortFields.includes(field)) {
+      return { [field]: direction.toUpperCase() === 'ASC' ? 'ASC' : 'DESC' }
+    }
+
+    return { createdAt: 'DESC' }
+  }
+
   private toProductModel(product: Product): ProductModel {
     return {
       idProduit: product.idProduit,
@@ -234,8 +268,6 @@ export class ProductService {
       quantiteDisponible: product.quantiteDisponible,
       statut: product.statut,
       statusStock: product.statutStock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
       sku: product.sku,
       poids: product.poids,
       urlImage: product.urlImage,
@@ -249,6 +281,19 @@ export class ProductService {
       largeur: product.largeur,
       longueur: product.longueur,
       isArchived: product.isArchived,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      idFamille: product.idFamille,
+      famille: product.famille
+        ? {
+            idFamille: product.famille.idFamille,
+            nomFamille: product.famille.nomFamille,
+            description: product.famille.description,
+            isArchived: product.famille.isArchived,
+            createdAt: product.famille.createdAt,
+            updatedAt: product.famille.updatedAt,
+          }
+        : undefined,
     }
   }
 }

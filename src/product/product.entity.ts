@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { BaseEntity } from '../base/base.entity'
 import ProductStatus from 'src/enums/product-status.enum'
 import StockStatus from 'src/enums/stock-status.enum'
+import { ProductFamily } from '../product-family/product-family.entity'
 
 @Entity('produits')
 export class Product extends BaseEntity {
@@ -72,4 +73,11 @@ export class Product extends BaseEntity {
 
   @Column({ type: 'decimal', nullable: true })
   longueur?: number
+
+  @ManyToOne('ProductFamily', 'produits', { nullable: false })
+  @JoinColumn({ name: 'idFamille' })
+  famille: ProductFamily
+
+  @Column()
+  idFamille: string
 }

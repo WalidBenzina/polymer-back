@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsEnum, IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator'
+import {
+  IsNotEmpty,
+  IsEnum,
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import ProductStatus from 'src/enums/product-status.enum'
 import StockStatus from 'src/enums/stock-status.enum'
@@ -127,4 +135,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   longueur?: number
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'ID de la famille de produits',
+  })
+  @IsNotEmpty()
+  @IsUUID()
+  idFamille: string
 }

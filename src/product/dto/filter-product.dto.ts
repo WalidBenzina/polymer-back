@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsNumber, IsOptional, IsString, IsBoolean } from 'class-validator'
+import { IsEnum, IsNumber, IsOptional, IsString, IsBoolean, IsUUID } from 'class-validator'
 import { Type } from 'class-transformer'
 import ProductStatus from 'src/enums/product-status.enum'
 import StockStatus from 'src/enums/stock-status.enum'
@@ -69,4 +69,13 @@ export class FilterProductDto {
   @Type(() => Boolean)
   @IsBoolean()
   includeArchived?: boolean = false
+
+  @ApiProperty({
+    description: 'Filter by product family ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  idFamille?: string
 }

@@ -1,5 +1,6 @@
 import ProductStatus from 'src/enums/product-status.enum'
 import StockStatus from 'src/enums/stock-status.enum'
+import { ProductFamilyModel } from './product-family.model'
 
 export interface ProductModel {
   idProduit: string
@@ -24,4 +25,6 @@ export interface ProductModel {
   isArchived: boolean
   createdAt: Date
   updatedAt?: Date
+  idFamille: string
+  famille?: ProductFamilyModel
 }

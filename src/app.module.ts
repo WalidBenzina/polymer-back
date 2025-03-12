@@ -13,6 +13,7 @@ import { User } from './user/user.entity'
 import { Client } from './client/client.entity'
 import { Role } from './role/role.entity'
 import { Product } from './product/product.entity'
+import { ProductFamily } from './product-family/product-family.entity'
 import { Commande } from './commande/commande.entity'
 import { Document } from './document/document.entity'
 import { Paiement } from './paiement/paiement.entity'
@@ -40,11 +41,23 @@ import { LineItem } from './lineitem/lineitem.entity'
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-      entities: [User, Client, Role, Product, Commande, Document, Paiement, OffreDePrix, LineItem],
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT, 10),
+      username: process.env.USER_DB,
+      password: process.env.PASSWORD_DB,
+      database: process.env.NAME_DB,
+      entities: [
+        User,
+        Client,
+        Role,
+        Product,
+        ProductFamily,
+        Commande,
+        Document,
+        Paiement,
+        OffreDePrix,
+        LineItem,
+      ],
       synchronize: true,
     }),
     AuthModule,

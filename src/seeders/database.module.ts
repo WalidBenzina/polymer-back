@@ -6,6 +6,7 @@ import { Role } from '@/role/role.entity'
 import { User } from '@/user/user.entity'
 import { Client } from '@/client/client.entity'
 import { Product } from '@/product/product.entity'
+import { ProductFamily } from '@/product-family/product-family.entity'
 import { Commande } from '@/commande/commande.entity'
 import { Document } from '@/document/document.entity'
 import { Paiement } from '@/paiement/paiement.entity'
@@ -19,7 +20,16 @@ import { PaiementModule } from '@/paiement/paiement.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Role, User, Client, Product, Commande, Document, Paiement]),
+    TypeOrmModule.forFeature([
+      Role,
+      User,
+      Client,
+      Product,
+      ProductFamily,
+      Commande,
+      Document,
+      Paiement,
+    ]),
     ProductModule,
     UserModule,
     ClientModule,
