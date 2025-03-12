@@ -1,6 +1,6 @@
 enum StockStatus {
-  AVAILABLE = 'Available',
-  OUT_OF_STOCK = 'Out of Stock',
+  DISPONIBLE = 'Disponible',
+  HORS_STOCK = 'Hors stock',
 }
 
 export default StockStatus

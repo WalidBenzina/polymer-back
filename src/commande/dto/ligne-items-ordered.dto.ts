@@ -52,7 +52,7 @@ export class ProduitOrderedDto {
   readonly statut?: string
 
   @ApiProperty({
-    example: 'Available',
+    example: 'Disponible',
     description: 'Le statut du stock',
   })
   @IsString()

@@ -304,11 +304,8 @@ export class CommandeService {
       dateLivraisonPrevue: commande.dateLivraisonPrevue,
       dateLivraisonReelle: commande.dateLivraisonReelle,
       refCommande: commande.refCommande,
-      // Use type assertion to match the expected response format
       ligneItems: ligneItems as unknown as LineItemModel[],
-      // Include payments if available
       paiements: commande.paiements || [],
-      // Include documents if available
       documents: commande.documents || [],
       totalHt: commande.totalHt,
       totalTaxe: commande.totalTaxe,

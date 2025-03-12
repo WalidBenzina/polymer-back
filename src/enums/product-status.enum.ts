@@ -1,6 +1,6 @@
 enum ProductStatus {
-  INACTIF = 'INACTIF',
-  ACTIF = 'ACTIF',
+  INACTIF = 'Inactif',
+  ACTIF = 'Actif',
 }
 
 export default ProductStatus

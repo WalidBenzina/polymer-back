@@ -38,7 +38,7 @@ export class UpdateProductDto {
   statut?: ProductStatus
 
   @ApiProperty({
-    example: StockStatus.AVAILABLE,
+    example: StockStatus.DISPONIBLE,
     description: 'Statut du stock',
     enum: StockStatus,
   })

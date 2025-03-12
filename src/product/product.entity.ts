@@ -30,7 +30,7 @@ export class Product extends BaseEntity {
   @Column({
     type: 'enum',
     enum: StockStatus,
-    default: StockStatus.AVAILABLE,
+    default: StockStatus.DISPONIBLE,
   })
   statutStock: StockStatus
 
