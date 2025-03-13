@@ -15,14 +15,11 @@ export class Product extends BaseEntity {
   @Column()
   description: string
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', comment: 'Prix de vente par kg' })
   prix: number
 
-  @Column({ type: 'decimal', nullable: true })
-  prixPalette: number
-
-  @Column({ type: 'decimal', nullable: true })
-  prixContainer: number
+  @Column({ type: 'decimal', comment: "Prix d'achat par kg" })
+  prixAchat: number
 
   @Column({ type: 'int' })
   quantiteDisponible: number
@@ -41,14 +38,8 @@ export class Product extends BaseEntity {
   })
   statutStock: StockStatus
 
-  @Column({ default: false })
-  isArchived: boolean
-
   @Column({ type: 'varchar', length: 255, unique: true })
   sku: string
-
-  @Column({ type: 'float' })
-  poids: number
 
   @Column({ type: 'varchar', length: 255 })
   urlImage: string
@@ -60,25 +51,13 @@ export class Product extends BaseEntity {
   nombreVendu: number
 
   @Column({ type: 'decimal', nullable: true })
-  prixVente?: number
-
-  @Column({ type: 'decimal', nullable: true })
-  prixAchat?: number
-
-  @Column({ type: 'decimal', nullable: true })
   tauxTVA?: number
 
   @Column({ type: 'boolean', default: false })
   taxeActivee?: boolean
 
-  @Column({ type: 'decimal', nullable: true })
-  hauteur?: number
-
-  @Column({ type: 'decimal', nullable: true })
-  largeur?: number
-
-  @Column({ type: 'decimal', nullable: true })
-  longueur?: number
+  @Column({ default: false })
+  isArchived: boolean
 
   @ManyToOne('ProductFamily', 'produits', { nullable: false })
   @JoinColumn({ name: 'idFamille' })

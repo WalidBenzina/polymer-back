@@ -7,6 +7,8 @@ export interface LineItem {
   produit: ProductModel
   quantite: number
   uniteVente: SalesUnit
+  poidsTotal: number // Poids total en kg pour cette ligne
+  prixUnitaire: number // Prix unitaire par kg
   totalHt: number
   totalTax: number
   totalTtc: number

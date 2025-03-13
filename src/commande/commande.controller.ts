@@ -34,7 +34,7 @@ import { CreateDocumentDto } from '../document/dto/create-document.dto'
 import { DocumentResponse } from '../interfaces/document-response.interface'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { DocumentStatus } from '../enums/document.enum'
-import { CommandeOrderedDto } from './dto/ligne-items-ordered.dto'
+import { CommandeOrderedDto } from './dto/commande-ordered.dto'
 import { CommandeStatus } from '../enums/commande-status.enum'
 
 @ApiTags('Commande Management')
@@ -60,13 +60,11 @@ export class CommandeController {
         utilisateur: commandeOrderedDto.utilisateur,
         dateCommande: new Date().toISOString(),
         statut: CommandeStatus.PENDING,
-        dateLivraisonPrevue: commandeOrderedDto.dateLivraisonPrevue,
         refCommande: `CMD-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        ligneItems: commandeOrderedDto.ligneItems,
+        lineItems: commandeOrderedDto.lineItems,
         totalHt: commandeOrderedDto.totalHt,
         totalTaxe: commandeOrderedDto.totalTaxe,
         totalTtc: commandeOrderedDto.totalTtc,
-        methodePaiement: commandeOrderedDto.methodePaiement,
       }
 
       return await this.commandeService.create(createCommandeDto)

@@ -22,22 +22,21 @@ export class CreateProductDto {
   @IsString()
   description: string
 
-  @ApiProperty({ example: 29.99, description: 'Le prix du produit (prix à la tonne)' })
+  @ApiProperty({ example: 29.99, description: 'Le prix de vente par kg' })
   @IsNotEmpty()
   @IsNumber()
   prix: number
 
-  @ApiProperty({ example: 299.99, description: 'Le prix du produit à la palette' })
-  @IsOptional()
+  @ApiProperty({
+    example: 20.0,
+    description: "Le prix d'achat par kg",
+    required: false,
+  })
+  @IsNotEmpty()
   @IsNumber()
-  prixPalette?: number
+  prixAchat: number
 
-  @ApiProperty({ example: 2999.99, description: 'Le prix du produit au container' })
-  @IsOptional()
-  @IsNumber()
-  prixContainer?: number
-
-  @ApiProperty({ example: 100, description: 'Quantité disponible du produit' })
+  @ApiProperty({ example: 100, description: 'Quantité disponible du produit en kg' })
   @IsNotEmpty()
   @IsNumber()
   quantiteDisponible: number
@@ -65,11 +64,6 @@ export class CreateProductDto {
   @IsString()
   sku: string
 
-  @ApiProperty({ example: 1.5, description: 'Le poids du produit en kg' })
-  @IsNotEmpty()
-  @IsNumber()
-  poids: number
-
   @ApiProperty({
     example: 'http://example.com/image.jpg',
     description: "URL de l'image du produit",
@@ -89,20 +83,6 @@ export class CreateProductDto {
   @IsNumber()
   nombreVendu?: number
 
-  @ApiProperty({ example: 35.99, description: 'Le prix de vente du produit' })
-  @IsNotEmpty()
-  @IsNumber()
-  prixVente: number
-
-  @ApiProperty({
-    example: 20.0,
-    description: "Le prix d'achat du produit",
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  prixAchat?: number
-
   @ApiProperty({
     example: 0.2,
     description: 'Taux de TVA appliqué au produit',
@@ -118,33 +98,6 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsBoolean()
   taxeActivee: boolean
-
-  @ApiProperty({
-    example: 10.0,
-    description: 'Hauteur du produit en cm',
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  hauteur?: number
-
-  @ApiProperty({
-    example: 5.0,
-    description: 'Largeur du produit en cm',
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  largeur?: number
-
-  @ApiProperty({
-    example: 20.0,
-    description: 'Longueur du produit en cm',
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  longueur?: number
 
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',

@@ -11,11 +11,8 @@ import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { Product } from 'src/product/product.entity'
 
-import { DocumentsService } from '../document/document.service'
 import { CommandeResponse } from '../interfaces/commande-response'
 import { Paiement } from 'src/paiement/paiement.entity'
-import { PaiementStatus } from 'src/enums/paiement-status.enum'
-import { MethodPaiement } from 'src/enums/method-paiement.enum'
 import { LineItem } from '../lineitem/lineitem.entity'
 import { LineItemService } from '../lineitem/lineitem.service'
 import { LineItem as LineItemModel } from 'src/_models/lineitem.model'
@@ -34,7 +31,6 @@ export class CommandeService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
-    private readonly documentService: DocumentsService,
     @InjectRepository(LineItem)
     private readonly lineItemRepository: Repository<LineItem>,
     private readonly lineItemService: LineItemService
@@ -46,14 +42,11 @@ export class CommandeService {
       utilisateur,
       dateCommande,
       statut,
-      dateLivraisonPrevue,
-      dateLivraisonReelle,
-      refCommande = `CMD-${Date.now()}`,
-      ligneItems = [],
+      refCommande,
+      lineItems = [],
       totalHt = 0,
       totalTaxe = 0,
       totalTtc = 0,
-      methodePaiement,
     } = createCommandeDto
 
     const queryRunner = this.commandeRepository.manager.connection.createQueryRunner()
@@ -77,13 +70,21 @@ export class CommandeService {
       }
 
       // Stock verification
-      for (const item of ligneItems) {
+      for (const item of lineItems) {
         const produit = await this.produitRepository.findOne({
           where: { idProduit: item.produit.idProduit },
         })
 
         if (!produit) {
           throw new NotFoundException(`Produit avec ID ${item.produit.idProduit} non trouvé`)
+        }
+
+        // Verify stock availability based on weight
+        if (produit.quantiteDisponible < item.poidsTotal) {
+          throw new HttpException(
+            `Stock insuffisant pour le produit ${produit.nomProduit}. Disponible: ${produit.quantiteDisponible} kg, Demandé: ${item.poidsTotal} kg`,
+            HttpStatus.BAD_REQUEST
+          )
         }
 
         await queryRunner.manager.save(produit)
@@ -96,8 +97,6 @@ export class CommandeService {
         client: clientEntity,
         utilisateur: utilisateurEntity,
         refCommande,
-        dateLivraisonPrevue,
-        dateLivraisonReelle,
         totalHt,
         totalTaxe,
         totalTtc,
@@ -106,7 +105,7 @@ export class CommandeService {
       const savedCommande = await queryRunner.manager.save(commandeEntity)
 
       // Create line items directly with queryRunner
-      for (const item of ligneItems) {
+      for (const item of lineItems) {
         const produit = await this.produitRepository.findOne({
           where: { idProduit: item.produit.idProduit },
         })
@@ -120,6 +119,9 @@ export class CommandeService {
           produit,
           commande: savedCommande,
           quantite: item.quantite,
+          uniteVente: item.uniteVente,
+          poidsTotal: item.poidsTotal,
+          prixUnitaire: item.prixUnitaire,
           totalHt: item.totalHt,
           totalTax: item.totalTax,
           totalTtc: item.totalTtc,
@@ -129,22 +131,6 @@ export class CommandeService {
         await queryRunner.manager.save(lineItem)
       }
 
-      // Create payment
-      const paiementEntity = this.paiementRepository.create({
-        montant: totalTtc,
-        methodePaiement: methodePaiement || MethodPaiement.VIREMENT,
-        statut: PaiementStatus.PENDING,
-        idCommande: savedCommande,
-        idUtilisateur: utilisateurEntity,
-      })
-
-      const savedPaiement = await queryRunner.manager.save(paiementEntity)
-
-      // Ensure the payment is associated with the order
-      if (!savedCommande.paiements) {
-        savedCommande.paiements = []
-      }
-      savedCommande.paiements.push(savedPaiement)
       await queryRunner.manager.save(savedCommande)
 
       await queryRunner.commitTransaction()
@@ -205,6 +191,8 @@ export class CommandeService {
           })
 
           if (produit) {
+            // Restore stock based on weight
+            produit.quantiteDisponible += item.poidsTotal
             await queryRunner.manager.save(produit)
           }
         }
@@ -218,7 +206,9 @@ export class CommandeService {
           })
 
           if (produit) {
-            produit.nombreVendu += item.quantite //❗ Augmentation du nombre vendu
+            // Reduce stock based on weight
+            produit.quantiteDisponible -= item.poidsTotal
+            produit.nombreVendu += item.poidsTotal //❗ Augmentation du nombre vendu en kg
             await queryRunner.manager.save(produit) //❗ Sauvegarde du produit avec la mise à jour du stock et du nombre vendu
           }
         }
@@ -267,12 +257,14 @@ export class CommandeService {
 
   private toCommandeModel(commande: Commande): CommandeResponse {
     // Convert lineItems to ligneItems for the response model format
-    const ligneItems =
+    const lineItems =
       commande.lineItems?.map((item) => ({
         idLineItem: item.idLineItem,
         produit: item.produit,
         quantite: item.quantite,
         uniteVente: item.uniteVente,
+        poidsTotal: item.poidsTotal,
+        prixUnitaire: item.prixUnitaire,
         totalHt: item.totalHt,
         totalTax: item.totalTax,
         totalTtc: item.totalTtc,
@@ -305,7 +297,7 @@ export class CommandeService {
       dateLivraisonPrevue: commande.dateLivraisonPrevue,
       dateLivraisonReelle: commande.dateLivraisonReelle,
       refCommande: commande.refCommande,
-      ligneItems: ligneItems as unknown as LineItemModel[],
+      lineItems: lineItems as unknown as LineItemModel[],
       paiements: commande.paiements || [],
       documents: commande.documents || [],
       totalHt: commande.totalHt,
@@ -420,7 +412,7 @@ export class CommandeService {
       }
 
       // Handle line items update
-      if (updateCommandeDto.ligneItems) {
+      if (updateCommandeDto.lineItems) {
         // Delete existing line items
         const existingLineItems = await this.lineItemRepository.find({
           where: { commande: { idCommande: id } },
@@ -431,7 +423,7 @@ export class CommandeService {
         }
 
         // Create new line items using the service
-        for (const item of updateCommandeDto.ligneItems) {
+        for (const item of updateCommandeDto.lineItems) {
           await this.lineItemService.createLineItem(item, id)
         }
       }

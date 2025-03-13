@@ -1,45 +1,10 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
-import {
-  IsDateString,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsArray,
-  ValidateNested,
-  IsUUID,
-} from 'class-validator'
+import { IsDateString, IsNumber, IsOptional, IsArray, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer'
 import { CreateCommandeDto } from './create-commande.dto'
-import { LigneItemOrderedDto } from './ligne-items-ordered.dto'
+import { LineItemOrderedDto } from './line-items-ordered.dto'
 
 export class UpdateCommandeDto extends PartialType(CreateCommandeDto) {
-  @ApiProperty({
-    example: '2024-10-28',
-    description: 'La date de la commande au format YYYY-MM-DD',
-    required: false,
-  })
-  @IsDateString()
-  @IsOptional()
-  readonly dateCommande?: string
-
-  @ApiProperty({
-    example: 'uuid client',
-    description: "L'ID du client (optionnel)",
-    required: false,
-  })
-  @IsUUID()
-  @IsOptional()
-  readonly client?: string
-
-  @ApiProperty({
-    example: 'uuid user',
-    description: "L'ID de l'utilisateur qui a créé la commande",
-    required: false,
-  })
-  @IsUUID()
-  @IsOptional()
-  readonly utilisateur?: string
-
   @ApiProperty({
     example: '2024-11-05',
     description: 'La date de livraison prévue au format YYYY-MM-DD',
@@ -59,16 +24,7 @@ export class UpdateCommandeDto extends PartialType(CreateCommandeDto) {
   readonly dateLivraisonReelle?: string
 
   @ApiProperty({
-    example: 'CMD-2024001',
-    description: 'La référence unique de la commande',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  readonly refCommande?: string
-
-  @ApiProperty({
-    type: [LigneItemOrderedDto],
+    type: [LineItemOrderedDto],
     description: 'Les articles de la commande',
     required: false,
     example: [
@@ -87,9 +43,9 @@ export class UpdateCommandeDto extends PartialType(CreateCommandeDto) {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => LigneItemOrderedDto)
+  @Type(() => LineItemOrderedDto)
   @IsOptional()
-  readonly ligneItems?: LigneItemOrderedDto[]
+  readonly lineItems?: LineItemOrderedDto[]
 
   @ApiProperty({
     example: 500.0,

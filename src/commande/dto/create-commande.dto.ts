@@ -12,8 +12,7 @@ import {
 import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { Type } from 'class-transformer'
 import { LineItemStatus } from 'src/enums/line-item-status.enum'
-import { LigneItemOrderedDto } from './ligne-items-ordered.dto'
-import { MethodPaiement } from 'src/enums/method-paiement.enum'
+import { LineItemOrderedDto } from './line-items-ordered.dto'
 
 export class CreateCommandeDto {
   @ApiProperty({
@@ -48,24 +47,6 @@ export class CreateCommandeDto {
   readonly statut: CommandeStatus
 
   @ApiProperty({
-    example: '2024-11-05',
-    description: 'La date de livraison prévue au format YYYY-MM-DD',
-    required: false,
-  })
-  @IsDateString()
-  @IsOptional()
-  readonly dateLivraisonPrevue?: string
-
-  @ApiProperty({
-    example: '2024-11-07',
-    description: 'La date de livraison réelle au format YYYY-MM-DD',
-    required: false,
-  })
-  @IsDateString()
-  @IsOptional()
-  readonly dateLivraisonReelle?: string
-
-  @ApiProperty({
     example: 'CMD-2024001',
     description: 'La référence unique de la commande',
   })
@@ -93,9 +74,9 @@ export class CreateCommandeDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => LigneItemOrderedDto)
+  @Type(() => LineItemOrderedDto)
   @IsOptional()
-  readonly ligneItems?: LigneItemOrderedDto[]
+  readonly lineItems?: LineItemOrderedDto[]
 
   @ApiProperty({
     example: 500.0,
@@ -117,12 +98,4 @@ export class CreateCommandeDto {
   })
   @IsNumber()
   readonly totalTtc: number
-
-  @ApiProperty({
-    example: MethodPaiement.VIREMENT,
-    enum: MethodPaiement,
-    description: 'La méthode de paiement',
-  })
-  @IsEnum(MethodPaiement)
-  readonly methodePaiement: MethodPaiement
 }

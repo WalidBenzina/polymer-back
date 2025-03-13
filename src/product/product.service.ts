@@ -32,15 +32,6 @@ export class ProductService {
         throw new HttpException('Un produit avec ce SKU existe déjà.', HttpStatus.BAD_REQUEST)
       }
 
-      // Set default values for palette and container prices if not provided
-      if (!createProductDto.prixPalette) {
-        createProductDto.prixPalette = createProductDto.prix * 10 // Default: 10x the base price
-      }
-
-      if (!createProductDto.prixContainer) {
-        createProductDto.prixContainer = createProductDto.prix * 100 // Default: 100x the base price
-      }
-
       const productEntity = this.productRepository.create(createProductDto)
       const product = await this.productRepository.save(productEntity)
 
@@ -274,23 +265,16 @@ export class ProductService {
       nomProduit: product.nomProduit,
       description: product.description,
       prix: product.prix,
-      prixPalette: product.prixPalette || product.prix * 10, // Default if not set
-      prixContainer: product.prixContainer || product.prix * 100, // Default if not set
+      prixAchat: product.prixAchat,
       quantiteDisponible: product.quantiteDisponible,
       statut: product.statut,
-      statusStock: product.statutStock,
+      statutStock: product.statutStock,
       sku: product.sku,
-      poids: product.poids,
       urlImage: product.urlImage,
       evaluation: product.evaluation,
       nombreVendu: product.nombreVendu,
-      prixVente: product.prixVente,
-      prixAchat: product.prixAchat,
       tauxTVA: product.tauxTVA,
       taxeActivee: product.taxeActivee,
-      hauteur: product.hauteur,
-      largeur: product.largeur,
-      longueur: product.longueur,
       isArchived: product.isArchived,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

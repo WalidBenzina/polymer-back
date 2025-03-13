@@ -6,24 +6,17 @@ export interface ProductModel {
   idProduit: string
   nomProduit: string
   description: string
-  prix: number
-  prixPalette: number
-  prixContainer: number
+  prix: number // Prix de vente par kg
+  prixAchat: number // Prix d'achat par kg
   quantiteDisponible: number
-  statusStock: StockStatus
+  statutStock: StockStatus
   statut: ProductStatus
   sku: string
-  poids: number
   urlImage: string
   evaluation: number
   nombreVendu: number
-  prixVente: number
-  prixAchat?: number
   tauxTVA: number
   taxeActivee: boolean
-  hauteur?: number
-  largeur?: number
-  longueur?: number
   isArchived: boolean
   createdAt: Date
   updatedAt?: Date

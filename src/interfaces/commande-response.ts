@@ -24,7 +24,7 @@ export interface CommandeResponse {
   dateLivraisonPrevue: string
   dateLivraisonReelle: string
   refCommande: string
-  ligneItems?: LineItem[]
+  lineItems?: LineItem[]
   paiements?: Paiement[]
   documents?: Document[]
   totalHt: number

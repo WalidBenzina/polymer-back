@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { LineItem } from './lineitem.entity'
 import { Product } from '../product/product.entity'
-import { LigneItemOrderedDto } from '../commande/dto/ligne-items-ordered.dto'
+import { LineItemOrderedDto } from '../commande/dto/line-items-ordered.dto'
 import { LineItemStatus } from '../enums/line-item-status.enum'
 import SalesUnit from '../enums/sales-unit.enum'
 
@@ -16,7 +16,7 @@ export class LineItemService {
     private productRepository: Repository<Product>
   ) {}
 
-  async createLineItem(item: LigneItemOrderedDto, commandeId: string): Promise<LineItem> {
+  async createLineItem(item: LineItemOrderedDto, commandeId: string): Promise<LineItem> {
     const product = await this.productRepository.findOne({
       where: { idProduit: item.produit.idProduit },
     })
@@ -44,7 +44,9 @@ export class LineItemService {
       produit: product,
       commande: { idCommande: commandeId },
       quantite: item.quantite,
-      uniteVente: item.uniteVente || SalesUnit.PALETTE, // Default to PALETTE if not specified
+      uniteVente: item.uniteVente || SalesUnit.KG, // Default to KG if not specified
+      poidsTotal: item.poidsTotal,
+      prixUnitaire: item.prixUnitaire || product.prix, // Use product price if not specified
       totalHt: item.totalHt,
       totalTax: item.totalTax,
       totalTtc: item.totalTtc,

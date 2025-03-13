@@ -24,9 +24,26 @@ export class LineItem extends BaseEntity {
   @Column({
     type: 'enum',
     enum: SalesUnit,
-    default: SalesUnit.PALETTE,
+    default: SalesUnit.KG,
+    comment: 'Unité de vente (KG, PALETTE_1000, PALETTE_1500, CONTAINER_20, CONTAINER_40)',
   })
   uniteVente: SalesUnit
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    comment: 'Poids total en kg pour cette ligne',
+  })
+  poidsTotal: number
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    comment: 'Prix unitaire par kg',
+  })
+  prixUnitaire: number
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalHt: number
