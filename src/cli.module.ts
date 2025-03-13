@@ -12,7 +12,6 @@ import { Commande } from './commande/commande.entity'
 import { Document } from './document/document.entity'
 import { Paiement } from './paiement/paiement.entity'
 import { LineItem } from './lineitem/lineitem.entity'
-import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
 import { dataSourceOptions } from '../database/datasource'
 
 @Module({
@@ -32,22 +31,9 @@ import { dataSourceOptions } from '../database/datasource'
         Document,
         Paiement,
         LineItem,
-        OffreDePrix,
       ],
       autoLoadEntities: true,
     }),
-    TypeOrmModule.forFeature([
-      Role,
-      User,
-      Client,
-      Product,
-      ProductFamily,
-      Commande,
-      Document,
-      Paiement,
-      LineItem,
-      OffreDePrix,
-    ]),
   ],
   providers: [DatabaseSeeder, SeedCommand],
 })

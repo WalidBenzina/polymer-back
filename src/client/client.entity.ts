@@ -3,7 +3,6 @@ import { User } from '../user/user.entity'
 import { Commande } from '../commande/commande.entity'
 import { BaseEntity } from '../base/base.entity'
 import { ClientStatus } from '../enums/client-status.enum'
-import { OffreDePrix } from '../offre-de-prix/offre-de-prix.entity'
 
 @Entity('clients')
 export class Client extends BaseEntity {
@@ -34,7 +33,4 @@ export class Client extends BaseEntity {
     default: ClientStatus.ACTIVE,
   })
   statut: ClientStatus
-
-  @OneToMany(() => OffreDePrix, (offreDePrix) => offreDePrix.client)
-  offresDePrix: OffreDePrix[]
 }

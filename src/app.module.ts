@@ -13,7 +13,6 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { DocumentModule } from './document/document.module'
 import { MulterModule } from '@nestjs/platform-express'
-import { OffreDePrixModule } from './offre-de-prix/offre-de-prix.module'
 import { PaiementModule } from './paiement/paiement.module'
 import { DatabaseModule } from './seeders/database.module'
 import { MarineTrafficModule } from './marine-traffic/marine-traffic.module'
@@ -39,7 +38,6 @@ import { dataSourceOptions } from '../database/datasource'
     CommandeModule,
     UserModule,
     DocumentModule,
-    OffreDePrixModule,
     PaiementModule,
     DatabaseModule,
     MarineTrafficModule,
