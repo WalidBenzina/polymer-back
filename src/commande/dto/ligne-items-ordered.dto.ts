@@ -1,7 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNumber, IsOptional, IsString, IsUUID, IsBoolean, ValidateNested } from 'class-validator'
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsBoolean,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator'
 import { Type } from 'class-transformer'
 import { MethodPaiement } from '../../enums/method-paiement.enum'
+import SalesUnit from '../../enums/sales-unit.enum'
 
 export class ProduitOrderedDto {
   @ApiProperty({
@@ -170,6 +179,22 @@ export class ProduitOrderedDto {
   @IsString()
   @IsOptional()
   readonly longueur?: string
+
+  @ApiProperty({
+    example: '12000',
+    description: 'Le prix du produit à la palette',
+  })
+  @IsString()
+  @IsOptional()
+  readonly prixPalette?: string
+
+  @ApiProperty({
+    example: '120000',
+    description: 'Le prix du produit au container',
+  })
+  @IsString()
+  @IsOptional()
+  readonly prixContainer?: string
 }
 
 export class LigneItemOrderedDto {
@@ -187,6 +212,14 @@ export class LigneItemOrderedDto {
   })
   @IsNumber()
   readonly quantite: number
+
+  @ApiProperty({
+    example: SalesUnit.PALETTE,
+    description: "L'unité de vente (PALETTE ou CONTAINER)",
+    enum: SalesUnit,
+  })
+  @IsEnum(SalesUnit)
+  readonly uniteVente: SalesUnit
 
   @ApiProperty({
     example: 'active',

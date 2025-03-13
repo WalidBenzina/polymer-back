@@ -5,6 +5,7 @@ import { LineItem } from './lineitem.entity'
 import { Product } from '../product/product.entity'
 import { LigneItemOrderedDto } from '../commande/dto/ligne-items-ordered.dto'
 import { LineItemStatus } from '../enums/line-item-status.enum'
+import SalesUnit from '../enums/sales-unit.enum'
 
 @Injectable()
 export class LineItemService {
@@ -43,6 +44,7 @@ export class LineItemService {
       produit: product,
       commande: { idCommande: commandeId },
       quantite: item.quantite,
+      uniteVente: item.uniteVente || SalesUnit.PALETTE, // Default to PALETTE if not specified
       totalHt: item.totalHt,
       totalTax: item.totalTax,
       totalTtc: item.totalTtc,

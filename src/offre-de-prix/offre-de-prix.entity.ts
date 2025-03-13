@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm'
-import { Client } from 'src/client/client.entity'
-import { BaseEntity } from 'src/base/base.entity'
-import { OffreDePrixStatus } from 'src/enums/offre-de-prix-status.enum'
+import { Client } from '../client/client.entity'
+import { BaseEntity } from '../base/base.entity'
+import { OffreDePrixStatus } from '../enums/offre-de-prix-status.enum'
 
 @Entity('offreDePrix')
 export class OffreDePrix extends BaseEntity {

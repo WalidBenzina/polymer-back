@@ -7,6 +7,8 @@ export interface ProductModel {
   nomProduit: string
   description: string
   prix: number
+  prixPalette: number
+  prixContainer: number
   quantiteDisponible: number
   statusStock: StockStatus
   statut: ProductStatus

@@ -9,15 +9,6 @@ import { ProductModule } from './product/product.module'
 import { CommandeModule } from './commande/commande.module'
 import { UserModule } from './user/user.module'
 
-import { User } from './user/user.entity'
-import { Client } from './client/client.entity'
-import { Role } from './role/role.entity'
-import { Product } from './product/product.entity'
-import { ProductFamily } from './product-family/product-family.entity'
-import { Commande } from './commande/commande.entity'
-import { Document } from './document/document.entity'
-import { Paiement } from './paiement/paiement.entity'
-
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { DocumentModule } from './document/document.module'
@@ -27,9 +18,8 @@ import { PaiementModule } from './paiement/paiement.module'
 import { DatabaseModule } from './seeders/database.module'
 import { MarineTrafficModule } from './marine-traffic/marine-traffic.module'
 import { S3Module } from './s3/s3.module'
-import { OffreDePrix } from './offre-de-prix/offre-de-prix.entity'
 import { LineItemModule } from './lineitem/lineitem.module'
-import { LineItem } from './lineitem/lineitem.entity'
+import { dataSourceOptions } from '../database/datasource'
 
 @Module({
   imports: [
@@ -39,26 +29,8 @@ import { LineItem } from './lineitem/lineitem.entity'
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10),
-      username: process.env.USER_DB,
-      password: process.env.PASSWORD_DB,
-      database: process.env.NAME_DB,
-      entities: [
-        User,
-        Client,
-        Role,
-        Product,
-        ProductFamily,
-        Commande,
-        Document,
-        Paiement,
-        OffreDePrix,
-        LineItem,
-      ],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      useFactory: () => dataSourceOptions,
     }),
     AuthModule,
     RoleModule,

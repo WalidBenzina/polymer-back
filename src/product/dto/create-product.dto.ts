@@ -22,10 +22,20 @@ export class CreateProductDto {
   @IsString()
   description: string
 
-  @ApiProperty({ example: 29.99, description: 'Le prix du produit' })
+  @ApiProperty({ example: 29.99, description: 'Le prix du produit (prix à la tonne)' })
   @IsNotEmpty()
   @IsNumber()
   prix: number
+
+  @ApiProperty({ example: 299.99, description: 'Le prix du produit à la palette' })
+  @IsOptional()
+  @IsNumber()
+  prixPalette?: number
+
+  @ApiProperty({ example: 2999.99, description: 'Le prix du produit au container' })
+  @IsOptional()
+  @IsNumber()
+  prixContainer?: number
 
   @ApiProperty({ example: 100, description: 'Quantité disponible du produit' })
   @IsNotEmpty()

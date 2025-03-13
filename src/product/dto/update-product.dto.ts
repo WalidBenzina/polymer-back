@@ -18,10 +18,28 @@ export class UpdateProductDto {
   @IsString()
   description?: string
 
-  @ApiProperty({ example: 29.99, description: 'Le prix du produit', required: false })
+  @ApiProperty({
+    example: 29.99,
+    description: 'Le prix du produit (prix à la tonne)',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   prix?: number
+
+  @ApiProperty({ example: 299.99, description: 'Le prix du produit à la palette', required: false })
+  @IsOptional()
+  @IsNumber()
+  prixPalette?: number
+
+  @ApiProperty({
+    example: 2999.99,
+    description: 'Le prix du produit au container',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  prixContainer?: number
 
   @ApiProperty({ example: 100, description: 'Quantité disponible du produit', required: false })
   @IsOptional()

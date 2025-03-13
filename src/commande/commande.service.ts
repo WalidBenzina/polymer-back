@@ -272,6 +272,7 @@ export class CommandeService {
         idLineItem: item.idLineItem,
         produit: item.produit,
         quantite: item.quantite,
+        uniteVente: item.uniteVente,
         totalHt: item.totalHt,
         totalTax: item.totalTax,
         totalTtc: item.totalTtc,

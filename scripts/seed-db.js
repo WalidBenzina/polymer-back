@@ -5,13 +5,18 @@
  * Usage: node scripts/seed-db.js
  */
 
-const { spawn } = require('child_process')
-const path = require('path')
+import { spawn } from 'child_process'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 // Set environment variables
 process.env.NODE_ENV = process.env.NODE_ENV || 'development'
 
 console.log(`🌱 Running database seeder in ${process.env.NODE_ENV} environment...`)
+
+// Get current file directory with ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Run the nest-commander seed command
 const nestBin = path.resolve(__dirname, '../node_modules/.bin/nest')

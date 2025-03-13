@@ -225,6 +225,8 @@ export class ProductFamilyService {
             nomProduit: product.nomProduit,
             description: product.description,
             prix: product.prix,
+            prixPalette: product.prixPalette || product.prix * 10,
+            prixContainer: product.prixContainer || product.prix * 100,
             quantiteDisponible: product.quantiteDisponible,
             statut: product.statut,
             statusStock: product.statutStock,

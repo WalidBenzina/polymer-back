@@ -3,6 +3,7 @@ import { BaseEntity } from '../base/base.entity'
 import { LineItemStatus } from '../enums/line-item-status.enum'
 import { Product } from '../product/product.entity'
 import { Commande } from '../commande/commande.entity'
+import SalesUnit from '../enums/sales-unit.enum'
 
 @Entity('line_items')
 export class LineItem extends BaseEntity {
@@ -19,6 +20,13 @@ export class LineItem extends BaseEntity {
 
   @Column()
   quantite: number
+
+  @Column({
+    type: 'enum',
+    enum: SalesUnit,
+    default: SalesUnit.PALETTE,
+  })
+  uniteVente: SalesUnit
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalHt: number

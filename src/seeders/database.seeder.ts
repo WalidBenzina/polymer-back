@@ -1,24 +1,26 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
-import { Role } from '@/role/role.entity'
-import { RoleStatus } from '@/enums/role-status.enum'
-import { PermissionType } from '@/common/types/permissions.type'
-import { User } from '@/user/user.entity'
-import { Client } from '@/client/client.entity'
-import { Product } from '@/product/product.entity'
-import { ProductFamily } from '@/product-family/product-family.entity'
-import { Commande } from '@/commande/commande.entity'
-import { UserStatus } from '@/enums/user-status.enum'
-import { ClientStatus } from '@/enums/client-status.enum'
-import ProductStatus from '@/enums/product-status.enum'
-import StockStatus from '@/enums/stock-status.enum'
-import { CommandeStatus } from '@/enums/commande-status.enum'
+import { Role } from '../role/role.entity'
+import { RoleStatus } from '../enums/role-status.enum'
+import { PermissionType } from '../common/types/permissions.type'
+import { User } from '../user/user.entity'
+import { Client } from '../client/client.entity'
+import { Product } from '../product/product.entity'
+import { ProductFamily } from '../product-family/product-family.entity'
+import { Commande } from '../commande/commande.entity'
+import { UserStatus } from '../enums/user-status.enum'
+import { ClientStatus } from '../enums/client-status.enum'
+import ProductStatus from '../enums/product-status.enum'
+import StockStatus from '../enums/stock-status.enum'
+import { CommandeStatus } from '../enums/commande-status.enum'
 import * as bcrypt from 'bcrypt'
-import { Paiement } from '@/paiement/paiement.entity'
-import { MethodPaiement } from '@/enums/method-paiement.enum'
-import { PaiementStatus } from '@/enums/paiement-status.enum'
-import { LineItemStatus } from '@/enums/line-item-status.enum'
+import { Paiement } from '../paiement/paiement.entity'
+import { MethodPaiement } from '../enums/method-paiement.enum'
+import { PaiementStatus } from '../enums/paiement-status.enum'
+import { LineItemStatus } from '../enums/line-item-status.enum'
+import { LineItem } from '../lineitem/lineitem.entity'
+import SalesUnit from '../enums/sales-unit.enum'
 
 export const RoleUUIDs = {
   ADMIN: '',
@@ -245,6 +247,8 @@ export class DatabaseSeeder {
         nomProduit: 'RPET Flakes Clear',
         description: 'Recycled PET flakes, clear color, suitable for food packaging',
         prix: 1200.0,
+        prixPalette: 12000.0,
+        prixContainer: 120000.0,
         quantiteDisponible: 5000,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -268,6 +272,8 @@ export class DatabaseSeeder {
         nomProduit: 'HDPE Regrind',
         description: 'High-density polyethylene regrind from post-consumer waste',
         prix: 800.0,
+        prixPalette: 8000.0,
+        prixContainer: 80000.0,
         quantiteDisponible: 3000,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -291,6 +297,8 @@ export class DatabaseSeeder {
         nomProduit: 'PP Pellets Recycled',
         description: 'Recycled polypropylene pellets for injection molding.webp',
         prix: 950.0,
+        prixPalette: 9500.0,
+        prixContainer: 95000.0,
         quantiteDisponible: 4000,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -314,6 +322,8 @@ export class DatabaseSeeder {
         nomProduit: 'LDPE Resin Recycled',
         description: 'Low-density polyethylene resin from recycled materials',
         prix: 850.0,
+        prixPalette: 8500.0,
+        prixContainer: 85000.0,
         quantiteDisponible: 2500,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -337,6 +347,8 @@ export class DatabaseSeeder {
         nomProduit: 'PVC Recyclé',
         description: 'Polyvinyl chloride recyclé pour applications industrielles',
         prix: 1100.0,
+        prixPalette: 11000.0,
+        prixContainer: 110000.0,
         quantiteDisponible: 2000,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -360,6 +372,8 @@ export class DatabaseSeeder {
         nomProduit: 'ABS Recyclé',
         description: 'Acrylonitrile butadiène styrène recyclé pour moulage',
         prix: 1300.0,
+        prixPalette: 13000.0,
+        prixContainer: 130000.0,
         quantiteDisponible: 1500,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -383,6 +397,8 @@ export class DatabaseSeeder {
         nomProduit: 'PS Recyclé',
         description: 'Polystyrène recyclé pour emballages',
         prix: 900.0,
+        prixPalette: 9000.0,
+        prixContainer: 90000.0,
         quantiteDisponible: 3500,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -406,6 +422,8 @@ export class DatabaseSeeder {
         nomProduit: 'PC Recyclé',
         description: 'Polycarbonate recyclé haute qualité',
         prix: 1500.0,
+        prixPalette: 15000.0,
+        prixContainer: 150000.0,
         quantiteDisponible: 1000,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -429,6 +447,8 @@ export class DatabaseSeeder {
         nomProduit: 'PA Recyclé',
         description: 'Polyamide recyclé pour applications techniques',
         prix: 1400.0,
+        prixPalette: 14000.0,
+        prixContainer: 140000.0,
         quantiteDisponible: 1200,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -452,6 +472,8 @@ export class DatabaseSeeder {
         nomProduit: 'PET Recyclé',
         description: 'Polyéthylène téréphtalate recyclé pour bouteilles',
         prix: 1000.0,
+        prixPalette: 10000.0,
+        prixContainer: 100000.0,
         quantiteDisponible: 4500,
         statut: ProductStatus.ACTIF,
         statutStock: StockStatus.DISPONIBLE,
@@ -641,21 +663,18 @@ export class DatabaseSeeder {
   }
 
   private async seedOrders(clients: Client[]): Promise<void> {
-    const products = await this.productRepository.find()
-    const users = await this.userRepository.find({ relations: ['idClient'] })
+    console.log('Seeding orders...')
 
-    // Helper function to wait between operations
     const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-    // Retry function with exponential backoff
+    // Retry function for handling potential race conditions
     const retry = async <T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
       try {
         return await fn()
       } catch (error) {
         if (retries <= 0) throw error
-        console.log(`Retrying operation after ${delay}ms...`)
         await sleep(delay)
-        return retry(fn, retries - 1, delay * 2)
+        return retry(fn, retries - 1, delay)
       }
     }
 
@@ -666,104 +685,87 @@ export class DatabaseSeeder {
       date: Date,
       index: number
     ): Promise<Commande> => {
-      try {
-        const numItems = Math.floor(Math.random() * 3) + 1
-        const orderItems = []
-        let totalHt = 0
+      // Get random products for this order
+      const products = await this.productRepository.find({
+        take: Math.floor(Math.random() * 3) + 1, // 1-3 products per order
+      })
 
-        for (let i = 0; i < numItems; i++) {
-          const product = products[Math.floor(Math.random() * products.length)]
-          const quantity = Math.floor(Math.random() * 100) + 1
-          const itemTotal = product.prix * quantity
+      // Create line items for each product
+      const lineItems = []
+      let totalHt = 0
+      let totalTax = 0
+      let totalTtc = 0
 
-          orderItems.push({
-            produit: product,
-            quantite: quantity,
-            statut: LineItemStatus.ACTIVE,
-            totalHt: itemTotal,
-            totalTax: itemTotal * 0.2,
-            totalTtc: itemTotal + itemTotal * 0.2,
-            prixUnitaire: product.prix,
-            total: itemTotal,
-          })
+      for (const product of products) {
+        const quantity = Math.floor(Math.random() * 5) + 1 // 1-5 quantity
+        const salesUnit = Math.random() > 0.5 ? SalesUnit.PALETTE : SalesUnit.CONTAINER
 
-          totalHt += itemTotal
-        }
+        // Calculate price based on sales unit
+        const unitPrice =
+          salesUnit === SalesUnit.PALETTE ? product.prixPalette : product.prixContainer
 
-        const totalTaxe = totalHt * 0.2
-        const totalTtc = totalHt + totalTaxe
+        const itemTotalHt = unitPrice * quantity
+        const itemTotalTax = itemTotalHt * (product.tauxTVA / 100)
+        const itemTotalTtc = itemTotalHt + itemTotalTax
 
-        // Generate a unique reference using client ID, timestamp, and index
-        const timestamp = date.getTime()
-        const refCommande = `CMD-${client.idClient.slice(0, 4)}-${timestamp}-${index}`
+        totalHt += itemTotalHt
+        totalTax += itemTotalTax
+        totalTtc += itemTotalTtc
 
-        // Calculate delivery date
-        const deliveryDate = new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000)
-        const formattedDeliveryDate = deliveryDate.toISOString().split('T')[0]
-
-        // Generate payment method before creating the order
-        const paymentMethod = Math.random() < 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE
-
-        // Create order without payment first
-        const orderEntity = this.commandeRepository.create({
-          dateCommande: date.toISOString().split('T')[0],
-          client: client,
-          utilisateur: user,
-          statut: status,
-          refCommande,
-          lineItems: orderItems,
-          totalHt,
-          totalTaxe,
-          totalTtc,
-          dateLivraisonPrevue: formattedDeliveryDate,
+        const lineItem = this.dataSource.manager.create(LineItem, {
+          produit: product,
+          quantite: quantity,
+          uniteVente: salesUnit,
+          totalHt: itemTotalHt,
+          totalTax: itemTotalTax,
+          totalTtc: itemTotalTtc,
+          statut: LineItemStatus.ACTIVE,
         })
 
-        // Save the order
-        const savedOrder = await this.commandeRepository.save(orderEntity)
-
-        // Determine payment status based on order status
-        let paymentStatus = PaiementStatus.PENDING
-
-        // Définir le statut du paiement en fonction du statut de la commande
-        switch (status) {
-          case CommandeStatus.DELIVERED:
-            paymentStatus = PaiementStatus.COMPLETED
-            break
-          case CommandeStatus.CANCELLED:
-            paymentStatus = Math.random() < 0.5 ? PaiementStatus.FAILED : PaiementStatus.REFUNDED
-            break
-          case CommandeStatus.SHIPPED:
-          case CommandeStatus.CONFIRMED:
-            paymentStatus = Math.random() < 0.7 ? PaiementStatus.COMPLETED : PaiementStatus.PENDING
-            break
-          default:
-            paymentStatus = PaiementStatus.PENDING
-        }
-
-        // Create payment with reference to the saved order
-        const paymentEntity = this.paiementRepository.create({
-          montant: totalTtc,
-          methodePaiement: paymentMethod,
-          statut: paymentStatus,
-          idCommande: savedOrder,
-          idUtilisateur: user,
-        })
-
-        // Save the payment
-        const savedPayment = await this.paiementRepository.save(paymentEntity)
-
-        // Update the order with the payment reference
-        if (!savedOrder.paiements) {
-          savedOrder.paiements = []
-        }
-        savedOrder.paiements.push(savedPayment)
-        await this.commandeRepository.save(savedOrder)
-
-        return savedOrder
-      } catch (error) {
-        console.error(`Error creating order: ${error.message}`)
-        throw error
+        lineItems.push(lineItem)
       }
+
+      // Create the order
+      const randomSuffix = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0')
+      const refCommande = `CMD-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(index).padStart(3, '0')}-${randomSuffix}`
+
+      const commande = this.dataSource.manager.create(Commande, {
+        dateCommande: date,
+        client,
+        utilisateur: user,
+        statut: status,
+        refCommande,
+        dateLivraisonPrevue: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0], // 7 days after order
+        totalHt,
+        totalTaxe: totalTax,
+        totalTtc,
+      })
+
+      // Save the order first
+      const savedCommande = await this.dataSource.manager.save(commande)
+
+      // Then save line items with the order reference
+      for (const lineItem of lineItems) {
+        lineItem.commande = savedCommande
+        await this.dataSource.manager.save(lineItem)
+      }
+
+      // Create a payment for the order
+      const paiement = this.dataSource.manager.create(Paiement, {
+        montant: totalTtc,
+        methodePaiement: Math.random() > 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE,
+        statut: PaiementStatus.PENDING,
+        idCommande: savedCommande,
+        idUtilisateur: user,
+      })
+
+      await this.dataSource.manager.save(paiement)
+
+      return savedCommande
     }
 
     // Process clients in smaller batches
@@ -773,7 +775,12 @@ export class DatabaseSeeder {
 
       // Process each client in the batch
       for (const client of clientBatch) {
-        const clientUser = users.find((u) => u.idClient?.idClient === client.idClient)
+        // Find users associated with this client
+        const clientUser = await this.userRepository
+          .createQueryBuilder('user')
+          .where('user.idClientIdClient = :clientId', { clientId: client.idClient })
+          .getOne()
+
         if (clientUser) {
           // Reduce number of orders per client to avoid overloading the DB
           const numOrders = Math.floor(Math.random() * 3) + 2 // 2-4 orders per client

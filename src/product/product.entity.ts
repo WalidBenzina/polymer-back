@@ -18,6 +18,12 @@ export class Product extends BaseEntity {
   @Column({ type: 'decimal' })
   prix: number
 
+  @Column({ type: 'decimal', nullable: true })
+  prixPalette: number
+
+  @Column({ type: 'decimal', nullable: true })
+  prixContainer: number
+
   @Column({ type: 'int' })
   quantiteDisponible: number
 
