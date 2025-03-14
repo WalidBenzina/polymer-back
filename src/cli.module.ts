@@ -13,7 +13,7 @@ import { Document } from './document/document.entity'
 import { Paiement } from './paiement/paiement.entity'
 import { LineItem } from './lineitem/lineitem.entity'
 import { dataSourceOptions } from '../database/datasource'
-
+import { EcheancePaiement } from './echeance-paiement/echeance-paiement.entity'
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,9 +31,22 @@ import { dataSourceOptions } from '../database/datasource'
         Document,
         Paiement,
         LineItem,
+        EcheancePaiement,
       ],
       autoLoadEntities: true,
     }),
+    TypeOrmModule.forFeature([
+      Role,
+      User,
+      Client,
+      Product,
+      ProductFamily,
+      Commande,
+      Document,
+      Paiement,
+      LineItem,
+      EcheancePaiement,
+    ]),
   ],
   providers: [DatabaseSeeder, SeedCommand],
 })

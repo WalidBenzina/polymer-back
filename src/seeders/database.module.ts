@@ -19,6 +19,8 @@ import { DocumentModule } from '../document/document.module'
 import { PaiementModule } from '../paiement/paiement.module'
 import { LineItem } from '../lineitem/lineitem.entity'
 import { dataSourceOptions } from '../../database/datasource'
+import { EcheancePaiement } from '../echeance-paiement/echeance-paiement.entity'
+import { EcheancePaiementModule } from '../echeance-paiement/echeance-paiement.module'
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { dataSourceOptions } from '../../database/datasource'
         Document,
         Paiement,
         LineItem,
+        EcheancePaiement,
       ],
       autoLoadEntities: true,
     }),
@@ -47,6 +50,7 @@ import { dataSourceOptions } from '../../database/datasource'
       Document,
       Paiement,
       LineItem,
+      EcheancePaiement,
     ]),
     ProductModule,
     UserModule,
@@ -55,6 +59,7 @@ import { dataSourceOptions } from '../../database/datasource'
     CommandeModule,
     DocumentModule,
     PaiementModule,
+    EcheancePaiementModule,
   ],
   providers: [DatabaseSeeder, SeedCommand],
   exports: [DatabaseSeeder],

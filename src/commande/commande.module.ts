@@ -15,16 +15,27 @@ import { S3Module } from '../s3/s3.module'
 import { Paiement } from 'src/paiement/paiement.entity'
 import { LineItem } from 'src/lineitem/lineitem.entity'
 import { LineItemService } from 'src/lineitem/lineitem.service'
+import { EcheancePaiementModule } from '../echeance-paiement/echeance-paiement.module'
+import { EcheancePaiement } from '../echeance-paiement/echeance-paiement.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Commande, Client, User, Product, Paiement, LineItem]),
+    TypeOrmModule.forFeature([
+      Commande,
+      Client,
+      User,
+      Product,
+      Paiement,
+      LineItem,
+      EcheancePaiement,
+    ]),
     AuthModule,
     DocumentModule,
     MulterModule.register({
       storage: memoryStorage(),
     }),
     S3Module,
+    EcheancePaiementModule,
   ],
   controllers: [CommandeController],
   providers: [CommandeService, DocumentsService, LineItemService],

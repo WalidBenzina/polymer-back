@@ -6,6 +6,9 @@ import { CommandeStatus } from 'src/enums/commande-status.enum'
 import { LineItem } from '../lineitem/lineitem.entity'
 import { Document } from 'src/document/document.entity'
 import { Paiement } from 'src/paiement/paiement.entity'
+import { RemiseType } from 'src/enums/remise-type.enum'
+import { DevisStatus } from 'src/enums/devis-status.enum'
+import { EcheancePaiement } from '../echeance-paiement/echeance-paiement.entity'
 
 @Entity('commandes')
 export class Commande extends BaseEntity {
@@ -54,4 +57,34 @@ export class Commande extends BaseEntity {
 
   @OneToMany(() => Paiement, (paiement) => paiement.idCommande)
   paiements: Paiement[]
+
+  @OneToMany(() => EcheancePaiement, (echeance) => echeance.commande, { cascade: true })
+  echeancesPaiement: EcheancePaiement[]
+
+  // Nouveaux champs pour les coûts additionnels
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  prixLivraison: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  prixEmmagasinage: number
+
+  // Champs pour les remises
+  @Column({ type: 'enum', enum: RemiseType, nullable: true })
+  remiseType: RemiseType
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  remiseValeur: number
+
+  // Statut du devis (pour validation par le client)
+  @Column({
+    type: 'enum',
+    enum: DevisStatus,
+    default: DevisStatus.PENDING,
+    nullable: true,
+  })
+  devisStatus: DevisStatus
+
+  // Prix final après ajout des coûts et remises
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  prixFinal: number
 }

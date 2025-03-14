@@ -4,7 +4,7 @@ import { UserModel } from './user.model'
 import { PaiementStatus } from 'src/enums/paiement-status.enum'
 
 export interface PaiementModel {
-  idPaiement: number
+  idPaiement: string
   montant: number
   methodePaiement: MethodPaiement
   statut: PaiementStatus

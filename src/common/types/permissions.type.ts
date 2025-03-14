@@ -41,5 +41,10 @@ export enum PermissionType {
   UPDATE_PAYMENT = 'update:payment',
   DELETE_PAYMENT = 'delete:payment',
 
+  READ_ECHEANCE_PAYMENT = 'read:echeance_payment',
+  CREATE_ECHEANCE_PAYMENT = 'create:echeance_payment',
+  UPDATE_ECHEANCE_PAYMENT = 'update:echeance_payment',
+  DELETE_ECHEANCE_PAYMENT = 'delete:echeance_payment',
+
   READ_MARINE_TRAFFIC = 'read:marine_traffic',
 }

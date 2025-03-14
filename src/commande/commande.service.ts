@@ -17,6 +17,11 @@ import { LineItem } from '../lineitem/lineitem.entity'
 import { LineItemService } from '../lineitem/lineitem.service'
 import { LineItem as LineItemModel } from 'src/_models/lineitem.model'
 import { LineItemStatus } from '../enums/line-item-status.enum'
+import { UpdateCommandeAdditionalCostsDto } from './dto/update-commande-additional-costs.dto'
+import { UpdateCommandeRemiseDto } from './dto/update-commande-remise.dto'
+import { UpdateCommandeDevisStatusDto } from './dto/update-commande-devis-status.dto'
+import { RemiseType } from 'src/enums/remise-type.enum'
+import { DevisStatus } from 'src/enums/devis-status.enum'
 
 @Injectable()
 export class CommandeService {
@@ -303,6 +308,17 @@ export class CommandeService {
       totalHt: commande.totalHt,
       totalTaxe: commande.totalTaxe,
       totalTtc: commande.totalTtc,
+
+      // Nouveaux champs
+      prixLivraison: commande.prixLivraison,
+      prixEmmagasinage: commande.prixEmmagasinage,
+      remiseType: commande.remiseType,
+      remiseValeur: commande.remiseValeur,
+      devisStatus: commande.devisStatus,
+      prixFinal: commande.prixFinal,
+
+      // Échéances de paiement
+      echeancesPaiement: commande.echeancesPaiement || [],
     }
 
     return response
@@ -428,6 +444,30 @@ export class CommandeService {
         }
       }
 
+      if (updateCommandeDto.prixLivraison !== undefined) {
+        existingCommande.prixLivraison = updateCommandeDto.prixLivraison
+      }
+
+      if (updateCommandeDto.prixEmmagasinage !== undefined) {
+        existingCommande.prixEmmagasinage = updateCommandeDto.prixEmmagasinage
+      }
+
+      if (updateCommandeDto.remiseType !== undefined) {
+        existingCommande.remiseType = updateCommandeDto.remiseType as RemiseType
+      }
+
+      if (updateCommandeDto.remiseValeur !== undefined) {
+        existingCommande.remiseValeur = updateCommandeDto.remiseValeur
+      }
+
+      if (updateCommandeDto.devisStatus !== undefined) {
+        existingCommande.devisStatus = updateCommandeDto.devisStatus as DevisStatus
+      }
+
+      if (updateCommandeDto.prixFinal !== undefined) {
+        existingCommande.prixFinal = updateCommandeDto.prixFinal
+      }
+
       // Save the commande without line items (they're saved separately)
       await this.commandeRepository.save(existingCommande)
 
@@ -481,5 +521,150 @@ export class CommandeService {
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
+  }
+
+  // Méthode pour mettre à jour les coûts additionnels
+  async updateAdditionalCosts(
+    id: string,
+    updateCommandeAdditionalCostsDto: UpdateCommandeAdditionalCostsDto
+  ): Promise<CommandeResponse> {
+    const commande = await this.commandeRepository.findOne({
+      where: { idCommande: id },
+      relations: [
+        'client',
+        'utilisateur',
+        'lineItems',
+        'lineItems.produit',
+        'paiements',
+        'documents',
+        'echeancesPaiement',
+      ],
+    })
+
+    if (!commande) {
+      throw new NotFoundException(`Commande avec ID ${id} non trouvée`)
+    }
+
+    // Mise à jour des coûts additionnels
+    if (updateCommandeAdditionalCostsDto.prixLivraison !== undefined) {
+      commande.prixLivraison = updateCommandeAdditionalCostsDto.prixLivraison
+    }
+
+    if (updateCommandeAdditionalCostsDto.prixEmmagasinage !== undefined) {
+      commande.prixEmmagasinage = updateCommandeAdditionalCostsDto.prixEmmagasinage
+    }
+
+    // Recalcul du prix final
+    this.calculateFinalPrice(commande)
+
+    // Sauvegarde des modifications
+    const updatedCommande = await this.commandeRepository.save(commande)
+
+    return this.toCommandeModel(updatedCommande)
+  }
+
+  // Méthode pour mettre à jour les remises
+  async updateRemise(
+    id: string,
+    updateCommandeRemiseDto: UpdateCommandeRemiseDto
+  ): Promise<CommandeResponse> {
+    const commande = await this.commandeRepository.findOne({
+      where: { idCommande: id },
+      relations: [
+        'client',
+        'utilisateur',
+        'lineItems',
+        'lineItems.produit',
+        'paiements',
+        'documents',
+        'echeancesPaiement',
+      ],
+    })
+
+    if (!commande) {
+      throw new NotFoundException(`Commande avec ID ${id} non trouvée`)
+    }
+
+    // Mise à jour des remises
+    commande.remiseType = updateCommandeRemiseDto.remiseType
+    commande.remiseValeur = updateCommandeRemiseDto.remiseValeur
+
+    // Recalcul du prix final
+    this.calculateFinalPrice(commande)
+
+    // Sauvegarde des modifications
+    const updatedCommande = await this.commandeRepository.save(commande)
+
+    return this.toCommandeModel(updatedCommande)
+  }
+
+  // Méthode pour mettre à jour le statut du devis
+  async updateDevisStatus(
+    id: string,
+    updateCommandeDevisStatusDto: UpdateCommandeDevisStatusDto
+  ): Promise<CommandeResponse> {
+    const commande = await this.commandeRepository.findOne({
+      where: { idCommande: id },
+      relations: [
+        'client',
+        'utilisateur',
+        'lineItems',
+        'lineItems.produit',
+        'paiements',
+        'documents',
+        'echeancesPaiement',
+      ],
+    })
+
+    if (!commande) {
+      throw new NotFoundException(`Commande avec ID ${id} non trouvée`)
+    }
+
+    // Mise à jour du statut du devis
+    commande.devisStatus = updateCommandeDevisStatusDto.devisStatus
+
+    // Si le devis est accepté, mettre à jour le statut de la commande
+    if (updateCommandeDevisStatusDto.devisStatus === DevisStatus.ACCEPTED) {
+      commande.statut = CommandeStatus.CONFIRMED
+    }
+
+    // Si le devis est rejeté, mettre à jour le statut de la commande
+    if (updateCommandeDevisStatusDto.devisStatus === DevisStatus.REJECTED) {
+      commande.statut = CommandeStatus.CANCELLED
+    }
+
+    // Sauvegarde des modifications
+    const updatedCommande = await this.commandeRepository.save(commande)
+
+    return this.toCommandeModel(updatedCommande)
+  }
+
+  // Méthode pour calculer le prix final
+  private calculateFinalPrice(commande: Commande): void {
+    // Prix de base (totalTtc)
+    let prixFinal = commande.totalTtc
+
+    // Ajout des coûts additionnels
+    if (commande.prixLivraison) {
+      prixFinal += commande.prixLivraison
+    }
+
+    if (commande.prixEmmagasinage) {
+      prixFinal += commande.prixEmmagasinage
+    }
+
+    // Application de la remise
+    if (commande.remiseType && commande.remiseValeur) {
+      if (commande.remiseType === RemiseType.PERCENTAGE) {
+        // Remise en pourcentage
+        prixFinal = prixFinal * (1 - commande.remiseValeur / 100)
+      } else if (commande.remiseType === RemiseType.FIXED_AMOUNT) {
+        // Remise en montant fixe
+        prixFinal = prixFinal - commande.remiseValeur
+      }
+    }
+
+    // Mise à jour du prix final
+    commande.prixFinal = prixFinal
   }
 }

@@ -1,11 +1,13 @@
 import { CommandeStatus } from 'src/enums/commande-status.enum'
-import { LineItem } from '../_models/lineitem.model'
-import { Document } from '../document/document.entity'
-import { Paiement } from '../paiement/paiement.entity'
-
+import { LineItem } from 'src/_models/lineitem.model'
+import { RemiseType } from 'src/enums/remise-type.enum'
+import { DevisStatus } from 'src/enums/devis-status.enum'
+import { EcheancePaiement } from 'src/echeance-paiement/echeance-paiement.entity'
+import { Paiement } from 'src/paiement/paiement.entity'
+import { Document } from 'src/document/document.entity'
 export interface CommandeResponse {
   idCommande: string
-  dateCommande: string | Date
+  dateCommande: Date
   client?: {
     idClient: string
     nomClient: string
@@ -24,10 +26,27 @@ export interface CommandeResponse {
   dateLivraisonPrevue: string
   dateLivraisonReelle: string
   refCommande: string
-  lineItems?: LineItem[]
-  paiements?: Paiement[]
-  documents?: Document[]
+  lineItems: LineItem[]
+  paiements: Paiement[]
+  documents: Document[]
   totalHt: number
   totalTaxe: number
   totalTtc: number
+
+  // Nouveaux champs pour les coûts additionnels
+  prixLivraison?: number
+  prixEmmagasinage?: number
+
+  // Champs pour les remises
+  remiseType?: RemiseType
+  remiseValeur?: number
+
+  // Statut du devis (pour validation par le client)
+  devisStatus?: DevisStatus
+
+  // Prix final après ajout des coûts et remises
+  prixFinal?: number
+
+  // Échéances de paiement
+  echeancesPaiement?: EcheancePaiement[]
 }

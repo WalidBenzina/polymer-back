@@ -36,6 +36,9 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { DocumentStatus } from '../enums/document.enum'
 import { CommandeOrderedDto } from './dto/commande-ordered.dto'
 import { CommandeStatus } from '../enums/commande-status.enum'
+import { UpdateCommandeAdditionalCostsDto } from './dto/update-commande-additional-costs.dto'
+import { UpdateCommandeRemiseDto } from './dto/update-commande-remise.dto'
+import { UpdateCommandeDevisStatusDto } from './dto/update-commande-devis-status.dto'
 
 @ApiTags('Commande Management')
 @ApiBearerAuth('JWT-auth')
@@ -191,6 +194,80 @@ export class CommandeController {
     } catch (error) {
       console.error('Error creating document:', error)
       throw new BadRequestException(error.message || 'Failed to create document')
+    }
+  }
+
+  @Put(':id/additional-costs')
+  @Permissions(PermissionType.UPDATE_ORDER)
+  @ApiOperation({ summary: "Mettre à jour les coûts additionnels d'une commande" })
+  @ApiResponse({
+    status: 200,
+    description: 'Coûts additionnels mis à jour avec succès.',
+    type: Commande,
+  })
+  @ApiResponse({ status: 404, description: 'Commande non trouvée.' })
+  async updateAdditionalCosts(
+    @Param('id') id: string,
+    @Body() updateCommandeAdditionalCostsDto: UpdateCommandeAdditionalCostsDto
+  ): Promise<CommandeResponse> {
+    try {
+      return await this.commandeService.updateAdditionalCosts(id, updateCommandeAdditionalCostsDto)
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error
+      }
+      throw new InternalServerErrorException(
+        'Une erreur est survenue lors de la mise à jour des coûts additionnels'
+      )
+    }
+  }
+
+  @Put(':id/remise')
+  @Permissions(PermissionType.UPDATE_ORDER)
+  @ApiOperation({ summary: "Mettre à jour la remise d'une commande" })
+  @ApiResponse({
+    status: 200,
+    description: 'Remise mise à jour avec succès.',
+    type: Commande,
+  })
+  @ApiResponse({ status: 404, description: 'Commande non trouvée.' })
+  async updateRemise(
+    @Param('id') id: string,
+    @Body() updateCommandeRemiseDto: UpdateCommandeRemiseDto
+  ): Promise<CommandeResponse> {
+    try {
+      return await this.commandeService.updateRemise(id, updateCommandeRemiseDto)
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error
+      }
+      throw new InternalServerErrorException(
+        'Une erreur est survenue lors de la mise à jour de la remise'
+      )
+    }
+  }
+
+  @Put(':id/devis-status')
+  @ApiOperation({ summary: "Mettre à jour le statut du devis d'une commande" })
+  @ApiResponse({
+    status: 200,
+    description: 'Statut du devis mis à jour avec succès.',
+    type: Commande,
+  })
+  @ApiResponse({ status: 404, description: 'Commande non trouvée.' })
+  async updateDevisStatus(
+    @Param('id') id: string,
+    @Body() updateCommandeDevisStatusDto: UpdateCommandeDevisStatusDto
+  ): Promise<CommandeResponse> {
+    try {
+      return await this.commandeService.updateDevisStatus(id, updateCommandeDevisStatusDto)
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error
+      }
+      throw new InternalServerErrorException(
+        'Une erreur est survenue lors de la mise à jour du statut du devis'
+      )
     }
   }
 }

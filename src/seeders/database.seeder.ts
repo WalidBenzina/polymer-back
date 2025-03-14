@@ -21,7 +21,9 @@ import { PaiementStatus } from '../enums/paiement-status.enum'
 import { LineItemStatus } from '../enums/line-item-status.enum'
 import { LineItem } from '../lineitem/lineitem.entity'
 import SalesUnit, { SalesUnitWeight } from '../enums/sales-unit.enum'
-
+import { EcheancePaiement } from '../echeance-paiement/echeance-paiement.entity'
+import { RemiseType } from '../enums/remise-type.enum'
+import { DevisStatus } from '../enums/devis-status.enum'
 export const RoleUUIDs = {
   ADMIN: '',
   CLIENT: '',
@@ -45,6 +47,8 @@ export class DatabaseSeeder {
     private readonly commandeRepository: Repository<Commande>,
     @InjectRepository(Paiement)
     private readonly paiementRepository: Repository<Paiement>,
+    @InjectRepository(EcheancePaiement)
+    private readonly echeancePaiementRepository: Repository<EcheancePaiement>,
     private readonly dataSource: DataSource
   ) {}
 
@@ -144,10 +148,8 @@ export class DatabaseSeeder {
           PermissionType.CREATE_DOCUMENT,
           PermissionType.DELETE_DOCUMENT,
           PermissionType.UPDATE_DOCUMENT,
-          PermissionType.READ_PRICE_OFFER,
-          PermissionType.CREATE_PAYMENT,
-          PermissionType.UPDATE_PAYMENT,
-          PermissionType.DELETE_PAYMENT,
+          PermissionType.READ_PAYMENT,
+          PermissionType.READ_ECHEANCE_PAYMENT,
         ],
         status: RoleStatus.ACTIVE,
       },
@@ -666,6 +668,42 @@ export class DatabaseSeeder {
         lineItems.push(lineItem)
       }
 
+      // Add additional costs (randomly)
+      const hasDeliveryCost = Math.random() > 0.3 // 70% chance to have delivery cost
+      const hasStorageCost = Math.random() > 0.6 // 40% chance to have storage cost
+
+      const prixLivraison = hasDeliveryCost ? Math.round(Math.random() * 200 + 50) : 0 // 50-250€
+      const prixEmmagasinage = hasStorageCost ? Math.round(Math.random() * 100 + 30) : 0 // 30-130€
+
+      // Add discounts (randomly)
+      const hasDiscount = Math.random() > 0.6 // 40% chance to have a discount
+      let remiseType = null
+      let remiseValeur = null
+
+      if (hasDiscount) {
+        remiseType = Math.random() > 0.5 ? RemiseType.PERCENTAGE : RemiseType.FIXED_AMOUNT
+
+        if (remiseType === RemiseType.PERCENTAGE) {
+          remiseValeur = Math.round(Math.random() * 15 + 5) // 5-20% discount
+        } else {
+          remiseValeur = Math.round(Math.random() * 100 + 50) // 50-150€ fixed discount
+        }
+      }
+
+      // Calculate final price with additional costs and discounts
+      let prixFinal = totalTtc + prixLivraison + prixEmmagasinage
+
+      if (hasDiscount) {
+        if (remiseType === RemiseType.PERCENTAGE) {
+          prixFinal = prixFinal * (1 - remiseValeur / 100)
+        } else {
+          prixFinal = Math.max(0, prixFinal - remiseValeur) // Ensure price doesn't go negative
+        }
+      }
+
+      // Round to 2 decimal places
+      prixFinal = Math.round(prixFinal * 100) / 100
+
       // Create the order
       const randomSuffix = Math.floor(Math.random() * 10000)
         .toString()
@@ -684,6 +722,12 @@ export class DatabaseSeeder {
         totalHt,
         totalTaxe: totalTax,
         totalTtc,
+        prixLivraison: hasDeliveryCost ? prixLivraison : null,
+        prixEmmagasinage: hasStorageCost ? prixEmmagasinage : null,
+        remiseType: hasDiscount ? remiseType : null,
+        remiseValeur: hasDiscount ? remiseValeur : null,
+        prixFinal,
+        devisStatus: DevisStatus.PENDING,
       })
 
       // Save the order first
@@ -696,15 +740,77 @@ export class DatabaseSeeder {
       }
 
       // Create a payment for the order
-      const paiement = this.dataSource.manager.create(Paiement, {
-        montant: totalTtc,
-        methodePaiement: Math.random() > 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE,
-        statut: PaiementStatus.PENDING,
-        idCommande: savedCommande,
-        idUtilisateur: user,
-      })
+      const paymentMethod = Math.random() > 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE
 
-      await this.dataSource.manager.save(paiement)
+      // For completed orders, create a full payment
+      if (status === CommandeStatus.DELIVERED || status === CommandeStatus.SHIPPED) {
+        const paiement = this.dataSource.manager.create(Paiement, {
+          montant: prixFinal,
+          methodePaiement: paymentMethod,
+          statut: PaiementStatus.COMPLETED,
+          idCommande: savedCommande,
+          idUtilisateur: user,
+        })
+        await this.dataSource.manager.save(paiement)
+      }
+      // For other orders, create payment schedules
+      else {
+        // Determine if we should use payment schedules (70% chance)
+        const usePaymentSchedules = Math.random() > 0.3
+
+        if (usePaymentSchedules && prixFinal > 500) {
+          // Create 2-3 payment schedules
+          const numSchedules = Math.floor(Math.random() * 2) + 2
+          const scheduleAmount = prixFinal / numSchedules
+
+          for (let i = 0; i < numSchedules; i++) {
+            // Set dates for each schedule (30 days apart)
+            const scheduleDate = new Date(date)
+            scheduleDate.setDate(scheduleDate.getDate() + i * 30)
+
+            // First payment might be already completed
+            const scheduleStatus =
+              i === 0 && Math.random() > 0.5 ? PaiementStatus.COMPLETED : PaiementStatus.PENDING
+
+            const echeance = this.dataSource.manager.create(EcheancePaiement, {
+              dateEcheance: scheduleDate,
+              montant: Math.round(scheduleAmount * 100) / 100,
+              statut: scheduleStatus,
+              commande: savedCommande,
+              description:
+                i === 0
+                  ? 'Acompte initial'
+                  : i === numSchedules - 1
+                    ? 'Paiement final'
+                    : `Échéance ${i}`,
+            })
+
+            await this.dataSource.manager.save(echeance)
+
+            // If the schedule is completed, create a payment record
+            if (scheduleStatus === PaiementStatus.COMPLETED) {
+              const paiement = this.dataSource.manager.create(Paiement, {
+                montant: Math.round(scheduleAmount * 100) / 100,
+                methodePaiement: paymentMethod,
+                statut: PaiementStatus.COMPLETED,
+                idCommande: savedCommande,
+                idUtilisateur: user,
+              })
+              await this.dataSource.manager.save(paiement)
+            }
+          }
+        } else {
+          // Create a single pending payment
+          const paiement = this.dataSource.manager.create(Paiement, {
+            montant: prixFinal,
+            methodePaiement: paymentMethod,
+            statut: PaiementStatus.PENDING,
+            idCommande: savedCommande,
+            idUtilisateur: user,
+          })
+          await this.dataSource.manager.save(paiement)
+        }
+      }
 
       return savedCommande
     }

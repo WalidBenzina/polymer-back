@@ -2,7 +2,7 @@ import { Commande } from 'src/commande/commande.entity'
 import { DocumentStatus, DocumentType } from 'src/enums/document.enum'
 
 export interface DocumentModel {
-  idDocument: number
+  idDocument: string
   type: DocumentType
   mimeType: string
   size: number
