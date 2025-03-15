@@ -27,7 +27,7 @@ export class Commande extends BaseEntity {
   @Column({
     type: 'enum',
     enum: CommandeStatus,
-    default: CommandeStatus.PENDING,
+    default: CommandeStatus.EN_ATTENTE,
   })
   statut: CommandeStatus
 

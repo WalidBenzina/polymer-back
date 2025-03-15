@@ -743,7 +743,7 @@ export class DatabaseSeeder {
       const paymentMethod = Math.random() > 0.5 ? MethodPaiement.VIREMENT : MethodPaiement.CHEQUE
 
       // For completed orders, create a full payment
-      if (status === CommandeStatus.DELIVERED || status === CommandeStatus.SHIPPED) {
+      if (status === CommandeStatus.LIVREE || status === CommandeStatus.EN_LIVRAISON) {
         const paiement = this.dataSource.manager.create(Paiement, {
           montant: prixFinal,
           methodePaiement: paymentMethod,
@@ -832,11 +832,11 @@ export class DatabaseSeeder {
           // Reduce number of orders per client to avoid overloading the DB
           const numOrders = Math.floor(Math.random() * 3) + 2 // 2-4 orders per client
           const statuses = [
-            CommandeStatus.DELIVERED,
-            CommandeStatus.SHIPPED,
-            CommandeStatus.CONFIRMED,
-            CommandeStatus.PENDING,
-            CommandeStatus.CANCELLED,
+            CommandeStatus.LIVREE,
+            CommandeStatus.EN_LIVRAISON,
+            CommandeStatus.EN_COURS,
+            CommandeStatus.EN_ATTENTE,
+            CommandeStatus.ANNULEE,
           ]
 
           for (let i = 0; i < numOrders; i++) {

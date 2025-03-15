@@ -62,7 +62,7 @@ export class CommandeController {
         client: commandeOrderedDto.client,
         utilisateur: commandeOrderedDto.utilisateur,
         dateCommande: new Date().toISOString(),
-        statut: CommandeStatus.PENDING,
+        statut: CommandeStatus.EN_ATTENTE,
         refCommande: `CMD-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
         lineItems: commandeOrderedDto.lineItems,
         totalHt: commandeOrderedDto.totalHt,

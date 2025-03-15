@@ -189,7 +189,7 @@ export class CommandeService {
       }
 
       //❗ Libération du stock si la commande est annulée
-      if (statut === CommandeStatus.CANCELLED && commande.lineItems) {
+      if (statut === CommandeStatus.ANNULEE && commande.lineItems) {
         for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
@@ -204,7 +204,7 @@ export class CommandeService {
       }
 
       //❗ Mise à jour du stock et du nombre vendu si la commande est confirmée
-      if (statut === CommandeStatus.CONFIRMED && commande.lineItems) {
+      if (statut === CommandeStatus.EN_COURS && commande.lineItems) {
         for (const item of commande.lineItems) {
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
@@ -253,9 +253,9 @@ export class CommandeService {
   //❗ Fonction pour vérifier si un statut est dans les statuts non annulables
   private isNonCancelableStatus(statut: CommandeStatus): boolean {
     const nonCancelableStatuses = [
-      CommandeStatus.SHIPPED,
-      CommandeStatus.DELIVERED,
-      CommandeStatus.CANCELLED,
+      CommandeStatus.EN_LIVRAISON,
+      CommandeStatus.LIVREE,
+      CommandeStatus.ANNULEE,
     ]
     return nonCancelableStatuses.includes(statut)
   }
@@ -625,12 +625,12 @@ export class CommandeService {
 
     // Si le devis est accepté, mettre à jour le statut de la commande
     if (updateCommandeDevisStatusDto.devisStatus === DevisStatus.ACCEPTED) {
-      commande.statut = CommandeStatus.CONFIRMED
+      commande.statut = CommandeStatus.EN_COURS
     }
 
     // Si le devis est rejeté, mettre à jour le statut de la commande
     if (updateCommandeDevisStatusDto.devisStatus === DevisStatus.REJECTED) {
-      commande.statut = CommandeStatus.CANCELLED
+      commande.statut = CommandeStatus.ANNULEE
     }
 
     // Sauvegarde des modifications

@@ -39,7 +39,7 @@ export class CreateCommandeDto {
   readonly utilisateur: string
 
   @ApiProperty({
-    example: CommandeStatus.PENDING,
+    example: CommandeStatus.EN_ATTENTE,
     enum: CommandeStatus,
     description: 'Le statut de la commande',
   })

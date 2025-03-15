@@ -6,7 +6,7 @@ export class UpdateCommandeStatusDto {
   @ApiProperty({
     description: 'Le statut actuel de la commande',
     enum: CommandeStatus,
-    example: CommandeStatus.CANCELLED,
+    example: CommandeStatus.ANNULEE,
   })
   @IsEnum(CommandeStatus)
   statut: CommandeStatus
