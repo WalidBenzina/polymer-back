@@ -181,7 +181,7 @@ export class CommandeService {
       }
 
       //❗ Vérification des statuts non annulables
-      if (this.isNonCancelableStatus(commande.statut)) {
+      if (statut === CommandeStatus.ANNULEE && this.isNonCancelableStatus(commande.statut)) {
         throw new HttpException(
           "Impossible d'annuler cette commande, elle est déjà expédiée ou livrée",
           HttpStatus.BAD_REQUEST
@@ -206,6 +206,7 @@ export class CommandeService {
       //❗ Mise à jour du stock et du nombre vendu si la commande est confirmée
       if (statut === CommandeStatus.EN_COURS && commande.lineItems) {
         for (const item of commande.lineItems) {
+          console.log('item', item)
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
           })
@@ -302,7 +303,7 @@ export class CommandeService {
       dateLivraisonPrevue: commande.dateLivraisonPrevue,
       dateLivraisonReelle: commande.dateLivraisonReelle,
       refCommande: commande.refCommande,
-      lineItems: lineItems as unknown as LineItemModel[],
+      lineItems: lineItems as LineItemModel[],
       paiements: commande.paiements || [],
       documents: commande.documents || [],
       totalHt: commande.totalHt,
@@ -462,6 +463,11 @@ export class CommandeService {
 
       if (updateCommandeDto.devisStatus !== undefined) {
         existingCommande.devisStatus = updateCommandeDto.devisStatus as DevisStatus
+        if (updateCommandeDto.devisStatus === DevisStatus.ACCEPTED) {
+          existingCommande.statut = CommandeStatus.DEVIS_ACCEPTE
+        } else if (updateCommandeDto.devisStatus === DevisStatus.REJECTED) {
+          existingCommande.statut = CommandeStatus.ANNULEE
+        }
       }
 
       if (updateCommandeDto.prixFinal !== undefined) {
@@ -625,7 +631,7 @@ export class CommandeService {
 
     // Si le devis est accepté, mettre à jour le statut de la commande
     if (updateCommandeDevisStatusDto.devisStatus === DevisStatus.ACCEPTED) {
-      commande.statut = CommandeStatus.EN_COURS
+      commande.statut = CommandeStatus.DEVIS_ACCEPTE
     }
 
     // Si le devis est rejeté, mettre à jour le statut de la commande

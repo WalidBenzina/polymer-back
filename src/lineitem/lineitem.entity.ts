@@ -18,7 +18,7 @@ export class LineItem extends BaseEntity {
   @JoinColumn({ name: 'commande_id' })
   commande: Commande
 
-  @Column()
+  @Column({ type: 'int', comment: 'Quantité commandée' })
   quantite: number
 
   @Column({
@@ -30,9 +30,7 @@ export class LineItem extends BaseEntity {
   uniteVente: SalesUnit
 
   @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
+    type: 'int',
     comment: 'Poids total en kg pour cette ligne',
   })
   poidsTotal: number
