@@ -463,7 +463,10 @@ export class CommandeService {
 
       if (updateCommandeDto.devisStatus !== undefined) {
         existingCommande.devisStatus = updateCommandeDto.devisStatus as DevisStatus
-        if (updateCommandeDto.devisStatus === DevisStatus.ACCEPTED) {
+        if (
+          updateCommandeDto.devisStatus === DevisStatus.ACCEPTED &&
+          existingCommande.statut === CommandeStatus.DEVIS_EN_ATTENTE
+        ) {
           existingCommande.statut = CommandeStatus.DEVIS_ACCEPTE
         } else if (updateCommandeDto.devisStatus === DevisStatus.REJECTED) {
           existingCommande.statut = CommandeStatus.ANNULEE

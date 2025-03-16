@@ -72,7 +72,7 @@ export class Commande extends BaseEntity {
   @Column({ type: 'enum', enum: RemiseType, nullable: true })
   remiseType: RemiseType
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 1, nullable: true })
   remiseValeur: number
 
   // Statut du devis (pour validation par le client)
