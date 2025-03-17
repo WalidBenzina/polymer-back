@@ -173,7 +173,7 @@ export class CommandeService {
     try {
       const commande = await queryRunner.manager.findOne(Commande, {
         where: { idCommande: id },
-        relations: ['client', 'utilisateur', 'lineItems', 'lineItems.produit'],
+        relations: ['client', 'utilisateur', 'lineItems', 'lineItems.produit', 'echeancesPaiement'],
       })
 
       if (!commande) {
@@ -356,6 +356,7 @@ export class CommandeService {
         'paiements',
         'lineItems',
         'lineItems.produit',
+        'echeancesPaiement',
       ],
     })
     return this.toCommandeModel(commande)
@@ -365,7 +366,7 @@ export class CommandeService {
     try {
       const existingCommande = await this.commandeRepository.findOne({
         where: { idCommande: id },
-        relations: ['client', 'utilisateur', 'lineItems', 'paiements'],
+        relations: ['client', 'utilisateur', 'lineItems', 'paiements', 'echeancesPaiement'],
       })
 
       if (!existingCommande) {
@@ -482,7 +483,14 @@ export class CommandeService {
       // Fetch the updated commande with all relations
       const completeCommande = await this.commandeRepository.findOne({
         where: { idCommande: id },
-        relations: ['client', 'utilisateur', 'lineItems', 'lineItems.produit', 'paiements'],
+        relations: [
+          'client',
+          'utilisateur',
+          'lineItems',
+          'lineItems.produit',
+          'paiements',
+          'echeancesPaiement',
+        ],
       })
 
       return this.toCommandeModel(completeCommande)
