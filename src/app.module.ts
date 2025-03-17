@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule } from '@nestjs/config'
+import { ThrottlerModule } from '@nestjs/throttler'
+import { APP_FILTER } from '@nestjs/core'
 
 import { AuthModule } from './auth/auth.module'
 import { RoleModule } from './role/role.module'
@@ -19,6 +21,8 @@ import { MarineTrafficModule } from './marine-traffic/marine-traffic.module'
 import { S3Module } from './s3/s3.module'
 import { LineItemModule } from './lineitem/lineitem.module'
 import { dataSourceOptions } from '../database/datasource'
+import { validationSchema } from './config/validation.schema'
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 
 @Module({
   imports: [
@@ -27,7 +31,18 @@ import { dataSourceOptions } from '../database/datasource'
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+      validationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: false,
+      },
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: parseInt(process.env.THROTTLE_LIMIT || '10'),
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       useFactory: () => dataSourceOptions,
     }),
@@ -45,6 +60,12 @@ import { dataSourceOptions } from '../database/datasource'
     LineItemModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+  ],
 })
 export class AppModule {}

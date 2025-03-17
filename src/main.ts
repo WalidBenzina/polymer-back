@@ -3,14 +3,24 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { DatabaseSeeder } from './seeders/database.seeder'
+import helmet from 'helmet'
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule)
 
+  // Apply Helmet security headers
+  app.use(helmet())
+
   // Enable CORS with environment variables
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : process.env.NODE_ENV === 'production'
+      ? ['https://polymer-africa.com']
+      : '*'
+
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   })
@@ -20,6 +30,7 @@ async function bootstrap(): Promise<void> {
       transform: true,
       transformOptions: { enableImplicitConversion: true },
       whitelist: true,
+      forbidNonWhitelisted: true, // Reject requests with properties not defined in DTOs
     })
   )
 
@@ -43,7 +54,7 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('swagger', app, document)
 
   // Run database seeder in production environment
-  if (process.env.KOYEB === 'true' && process.env.AUTO_SEED === 'true') {
+  if (process.env.NODE_ENV === 'production' && process.env.AUTO_SEED === 'true') {
     try {
       const databaseSeeder = app.get(DatabaseSeeder)
       console.log('🌱 Starting automatic database seeding in production...')

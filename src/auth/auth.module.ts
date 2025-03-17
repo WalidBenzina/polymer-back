@@ -15,8 +15,8 @@ import { UserService } from 'src/user/user.service'
     TypeOrmModule.forFeature([User, Role, Client]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: 'polymer',
-      signOptions: { expiresIn: '1h' },
+      secret: process.env.JWT_SECRET || 'polymer',
+      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '24h' },
     }),
   ],
   controllers: [AuthController],

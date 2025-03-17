@@ -12,18 +12,20 @@ export const dataSourceOptions: DataSourceOptions = {
   database: process.env.DB_NAME || 'polymer_africa_db',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/database/migrations/*{.ts,.js}'],
-  synchronize: process.env.NODE_ENV === 'development' ? true : false,
-  ...(process.env.KOYEB === 'true'
-    ? {
-        ssl: true,
-        extra: {
+  synchronize: false,
+  migrationsRun: process.env.NODE_ENV === 'production',
+  extra: {
+    max: parseInt(process.env.DB_POOL_MAX || '20'),
+    idleTimeoutMillis: 30000,
+    ...(process.env.NODE_ENV === 'production'
+      ? {
           ssl: {
             rejectUnauthorized: false,
           },
           sslmode: 'require',
-        },
-      }
-    : {}),
+        }
+      : {}),
+  },
 }
 
 const dataSource = new DataSource(dataSourceOptions)

@@ -8,9 +8,13 @@ import { RegisterDto } from './dto/register.dto'
 import { JwtService } from '@nestjs/jwt'
 import { Role } from 'src/role/role.entity'
 import { Client } from 'src/client/client.entity'
+import { UserStatus } from 'src/enums/user-status.enum'
+import { ClientStatus } from 'src/enums/client-status.enum'
 
 @Injectable()
 export class AuthService {
+  private readonly BCRYPT_SALT_ROUNDS: number
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -19,9 +23,29 @@ export class AuthService {
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
     private jwtService: JwtService
-  ) {}
+  ) {
+    this.BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12')
+  }
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<{
+    idUtilisateur: string
+    nomUtilisateur: string
+    email: string
+    statut: UserStatus
+    role: {
+      idRole: string
+      nomRole: string
+      permissions: string[]
+    }
+    idClient: {
+      idClient: string
+      nomClient: string
+      email: string
+      adresse: string
+      telephone: string
+      statut: ClientStatus
+    } | null
+  }> {
     const { nomUtilisateur, email, motDePasse, nomRole, idClient } = registerDto
 
     const role = await this.roleRepository.findOne({ where: { nomRole } })
@@ -37,7 +61,7 @@ export class AuthService {
       }
     }
 
-    const hashedPassword = await bcrypt.hash(motDePasse, 10)
+    const hashedPassword = await bcrypt.hash(motDePasse, this.BCRYPT_SALT_ROUNDS)
 
     const user = this.userRepository.create({
       nomUtilisateur,
@@ -52,7 +76,25 @@ export class AuthService {
     return this.mapUserToUserModel(savedUser)
   }
 
-  mapUserToUserModel(user: User) {
+  mapUserToUserModel(user: User): {
+    idUtilisateur: string
+    nomUtilisateur: string
+    email: string
+    statut: UserStatus
+    role: {
+      idRole: string
+      nomRole: string
+      permissions: string[]
+    }
+    idClient: {
+      idClient: string
+      nomClient: string
+      email: string
+      adresse: string
+      telephone: string
+      statut: ClientStatus
+    } | null
+  } {
     return {
       idUtilisateur: user.idUtilisateur,
       nomUtilisateur: user.nomUtilisateur,
