@@ -206,7 +206,6 @@ export class CommandeService {
       //❗ Mise à jour du stock et du nombre vendu si la commande est confirmée
       if (statut === CommandeStatus.EN_COURS && commande.lineItems) {
         for (const item of commande.lineItems) {
-          console.log('item', item)
           const produit = await queryRunner.manager.findOne(Product, {
             where: { idProduit: item.produit.idProduit },
           })
