@@ -43,7 +43,7 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('swagger', app, document)
 
   // Run database seeder in production environment
-  if (process.env.NODE_ENV === 'production' && process.env.AUTO_SEED === 'true') {
+  if (process.env.KOYEB === 'true' && process.env.AUTO_SEED === 'true') {
     try {
       const databaseSeeder = app.get(DatabaseSeeder)
       console.log('🌱 Starting automatic database seeding in production...')

@@ -13,7 +13,7 @@ export const dataSourceOptions: DataSourceOptions = {
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/database/migrations/*{.ts,.js}'],
   synchronize: true,
-  ...(process.env.NODE_ENV === 'production'
+  ...(process.env.KOYEB === 'true'
     ? {
         ssl: true,
         extra: {

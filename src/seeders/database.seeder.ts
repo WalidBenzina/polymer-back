@@ -55,6 +55,7 @@ export class DatabaseSeeder {
   async seed(): Promise<void> {
     console.log('🌱 Starting database seeding...')
     console.log('🌱 NODE_ENV:', process.env.NODE_ENV)
+    console.log('🌱 KOYEB:', process.env.KOYEB)
 
     try {
       await this.clearDatabase()

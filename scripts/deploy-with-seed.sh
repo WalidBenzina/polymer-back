@@ -13,7 +13,7 @@ echo "📦 Building the application..."
 npm run build
 
 # Set environment variables for production with seeding
-export NODE_ENV=production
+export KOYEB=true
 export AUTO_SEED=true
 
 # Start the application
