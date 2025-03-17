@@ -12,7 +12,7 @@ export const dataSourceOptions: DataSourceOptions = {
   database: process.env.DB_NAME || 'polymer_africa_db',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/database/migrations/*{.ts,.js}'],
-  synchronize: true,
+  synchronize: process.env.NODE_ENV === 'development' ? true : false,
   ...(process.env.KOYEB === 'true'
     ? {
         ssl: true,
