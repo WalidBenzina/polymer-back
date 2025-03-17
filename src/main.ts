@@ -3,13 +3,9 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { DatabaseSeeder } from './seeders/database.seeder'
-import helmet from 'helmet'
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule)
-
-  // Apply Helmet security headers
-  app.use(helmet())
 
   // Enable CORS with environment variables
   const allowedOrigins = process.env.ALLOWED_ORIGINS
