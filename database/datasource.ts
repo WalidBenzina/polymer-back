@@ -15,8 +15,6 @@ export const dataSourceOptions: DataSourceOptions = {
   synchronize: false,
   migrationsRun: process.env.NODE_ENV === 'production',
   extra: {
-    max: parseInt(process.env.DB_POOL_MAX || '20'),
-    idleTimeoutMillis: 30000,
     ...(process.env.NODE_ENV === 'production'
       ? {
           ssl: {
