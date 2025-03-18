@@ -1,0 +1,12 @@
+app: polymer-back
+services:
+  - name: api
+    instance_type: free
+    ports:
+      - port: 3000
+        http: true
+    env:
+      - name: NODE_ENV
+        value: production
+    resources:
+      memory: 512Mi
